@@ -3,22 +3,27 @@ import threading
 import time
 from main import main
 
+def run_flask():
+    """Запускаем Flask для порта"""
+    from flask import Flask
+    app = Flask(__name__)
+    
+    @app.route('/')
+    def index():
+        return "Bot is running!"
+    
+    @app.route('/health')
+    def health():
+        return "OK"
+    
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)
+
 if __name__ == '__main__':
-    # Запускаем бота в отдельном потоке с event loop
-    def run_bot():
-        import asyncio
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        main()  # Здесь main() синхронная, но внутри запускает свой event loop
+    # Запускаем Flask в фоновом потоке
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.daemon = True
+    flask_thread.start()
     
-    thread = threading.Thread(target=run_bot)
-    thread.start()
-    
-    # Открываем порт для Render
-    import socket
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('0.0.0.0', int(os.environ.get('PORT', 8080))))
-    sock.listen()
-    
-    while True:
-        time.sleep(60)
+    # Бота запускаем в основном потоке
+    main()
