@@ -1,7 +1,7 @@
 import os
 import threading
 from flask import Flask
-from main import run_bot
+from main import main
 
 app = Flask(__name__)
 
@@ -14,10 +14,10 @@ def health():
     return "OK"
 
 def start_bot():
-    run_bot()
+    main()  # теперь это функция из main.py
 
 if __name__ == '__main__':
-    # Запускаем бота в отдельном потоке, чтобы Flask не блокировал
+    # Запускаем бота в отдельном потоке
     bot_thread = threading.Thread(target=start_bot, daemon=True)
     bot_thread.start()
     
