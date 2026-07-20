@@ -597,7 +597,7 @@ def main_kb(user_id):
     kb = [
         [InlineKeyboardButton("💳 ПОДПИСКА", callback_data='subscription'), InlineKeyboardButton("👤 ПРОФИЛЬ", callback_data='profile')],
         [InlineKeyboardButton("🔗 ПРИВЯЗАТЬ КАНАЛ", callback_data='connect_channel'), InlineKeyboardButton("⚙️ НАСТРОЙКИ", callback_data='channel_settings')],
-         InlineKeyboardButton("📢 ВП (ВЗАИМОПОСТ)", callback_data='vp_menu')],
+        [InlineKeyboardButton("📢 ВП (ВЗАИМОПОСТ)", callback_data='vp_menu')],
         [InlineKeyboardButton("🌍 ЯЗЫК", callback_data='language'), InlineKeyboardButton("ℹ️ ВЕРСИЯ", callback_data='version')],
         [InlineKeyboardButton("💬 ПОДДЕРЖКА", callback_data='support')],
     ]
