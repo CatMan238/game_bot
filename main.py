@@ -512,12 +512,12 @@ def get_blocked_users():
 # ============================================
 
 STARS_PRICES = {
-    'month_regular': 50,
-    'month_tester': 100,
-    '6month_regular': 250,
-    '6month_tester': 500,
-    'year_regular': 450,
-    'year_tester': 900,
+    'month_regular': 100,      # было 50
+    'month_tester': 200,       # было 100
+    '6month_regular': 500,     # было 250
+    '6month_tester': 1000,     # было 500
+    'year_regular': 900,       # было 450
+    'year_tester': 1800,       # было 900
 }
 
 SUBSCRIPTION_DAYS = {
