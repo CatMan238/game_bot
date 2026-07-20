@@ -1,5 +1,5 @@
 import os
-import threading
+import requests
 from flask import Flask, request
 from main import application, BOT_TOKEN
 
@@ -17,17 +17,15 @@ def webhook():
         application.process_update(update)
         return 'ok', 200
 
-@app.route('/set_webhook')
-def set_webhook():
-    """Установить webhook при запуске"""
-    import requests
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/setWebhook"
-    webhook_url = f"https://{os.environ.get('RENDER_EXTERNAL_URL', 'localhost')}/webhook"
-    resp = requests.post(url, json={'url': webhook_url})
-    return resp.json()
-
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
-    with app.test_client() as client:
-        client.get('/set_webhook')
+    # Устанавливаем webhook при старте
+    webhook_url = f"https://{os.environ.get('RENDER_EXTERNAL_URL', 'localhost')}/webhook"
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/setWebhook"
+    try:
+        resp = requests.post(url, json={'url': webhook_url})
+        print(f"Webhook set: {resp.json()}")
+    except Exception as e:
+        print(f"Failed to set webhook: {e}")
+    # Запускаем Flask
     app.run(host='0.0.0.0', port=port)
