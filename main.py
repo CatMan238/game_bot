@@ -3935,7 +3935,6 @@ def main():
     
     # Основные обработчики
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("setrole", set_role))
     application.add_handler(CallbackQueryHandler(callback))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_msg))
     application.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.ANIMATION | filters.Document.ALL, handle_msg))
