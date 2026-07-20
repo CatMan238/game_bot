@@ -95,17 +95,6 @@ def init_db():
         )
     ''')
     
-    # ===== ПАРТНЁРСТВА =====
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS partnerships (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            from_channel_id INTEGER,
-            to_channel_id INTEGER,
-            status TEXT DEFAULT 'pending',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
     # ===== НАСТРОЙКИ (ГЛОБАЛЬНЫЕ) =====
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS settings (

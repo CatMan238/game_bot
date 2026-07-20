@@ -15,7 +15,6 @@ LANGUAGE = {
     'connect_channel': '🔗 CONNECT CHANNEL',
     'disconnect_channel': '❌ DISCONNECT CHANNEL',
     'channel_settings': '⚙️ CHANNEL SETTINGS',
-    'partnership': '🤝 PARTNERSHIP',
     'search_channels': '🔍 SEARCH CHANNELS',
     'search_users': '🔍 SEARCH USERS',
     'language': '🌍 LANGUAGE',

@@ -597,7 +597,7 @@ def main_kb(user_id):
     kb = [
         [InlineKeyboardButton("💳 ПОДПИСКА", callback_data='subscription'), InlineKeyboardButton("👤 ПРОФИЛЬ", callback_data='profile')],
         [InlineKeyboardButton("🔗 ПРИВЯЗАТЬ КАНАЛ", callback_data='connect_channel'), InlineKeyboardButton("⚙️ НАСТРОЙКИ", callback_data='channel_settings')],
-        [InlineKeyboardButton("🤝 ПАРТНЁРСТВО", callback_data='partnership'), InlineKeyboardButton("📢 ВП (ВЗАИМОПОСТ)", callback_data='vp_menu')],
+         InlineKeyboardButton("📢 ВП (ВЗАИМОПОСТ)", callback_data='vp_menu')],
         [InlineKeyboardButton("🌍 ЯЗЫК", callback_data='language'), InlineKeyboardButton("ℹ️ ВЕРСИЯ", callback_data='version')],
         [InlineKeyboardButton("💬 ПОДДЕРЖКА", callback_data='support')],
     ]
@@ -1732,126 +1732,6 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply = await msg.reply_text(text, reply_markup=back_kb(uid))
             add_user_message(uid, reply)
         context.user_data['dev_search_type'] = None
-        await delete_user_messages(context.bot, uid, keep_last=1)
-        return
-    
-    # Партнёрство
-    if context.user_data.get('partnership_wait'):
-        text = msg.text.strip()
-        username = extract_username_from_link(text)
-        channel_id = extract_channel_id_from_text(text)
-        if username:
-            try:
-                chat = await context.bot.get_chat(f"@{username}")
-                if chat.type in ['channel', 'supergroup']:
-                    channel_id = chat.id
-                    context.user_data['partnership_channel_id'] = channel_id
-                    context.user_data['partnership_channel_name'] = chat.title
-                    reply = await msg.reply_text(
-                        f"✅ КАНАЛ НАЙДЕН!\n\n"
-                        f"📺 {chat.title}\n"
-                        f"🆔 ID: {chat.id}\n"
-                        f"📂 {chat.username}\n\n"
-                        f"📝 Введите текст для партнёрского предложения:",
-                        reply_markup=back_kb(uid)
-                    )
-                    add_user_message(uid, reply)
-                    context.user_data['partnership_text_wait'] = True
-                    await delete_user_messages(context.bot, uid, keep_last=1)
-                    return
-            except:
-                pass
-        if channel_id:
-            try:
-                chat = await context.bot.get_chat(channel_id)
-                if chat.type in ['channel', 'supergroup']:
-                    context.user_data['partnership_channel_id'] = channel_id
-                    context.user_data['partnership_channel_name'] = chat.title
-                    reply = await msg.reply_text(
-                        f"✅ КАНАЛ НАЙДЕН!\n\n"
-                        f"📺 {chat.title}\n"
-                        f"🆔 ID: {chat.id}\n\n"
-                        f"📝 Введите текст для партнёрского предложения:",
-                        reply_markup=back_kb(uid)
-                    )
-                    add_user_message(uid, reply)
-                    context.user_data['partnership_text_wait'] = True
-                    await delete_user_messages(context.bot, uid, keep_last=1)
-                    return
-            except:
-                pass
-        reply = await msg.reply_text(
-            "❌ КАНАЛ НЕ НАЙДЕН!\n\n"
-            "Попробуйте:\n"
-            "• Ссылку на канал (https://t.me/username)\n"
-            "• @username канала\n"
-            "• ID канала (-100...)",
-            reply_markup=back_kb(uid)
-        )
-        add_user_message(uid, reply)
-        await delete_user_messages(context.bot, uid, keep_last=1)
-        return
-    
-    if context.user_data.get('partnership_text_wait'):
-        text = msg.text.strip()
-        if not text:
-            reply = await msg.reply_text("❌ ВВЕДИТЕ ТЕКСТ!", reply_markup=back_kb(uid))
-            add_user_message(uid, reply)
-            await delete_user_messages(context.bot, uid, keep_last=1)
-            return
-        channel_id = context.user_data.get('partnership_channel_id')
-        channel_name = context.user_data.get('partnership_channel_name')
-        if channel_id and channel_name:
-            ch = get_channel_by_channel_id(channel_id)
-            if ch:
-                owner_id = ch['owner_id']
-                owner_name = get_user_nickname(owner_id) or "Владелец"
-                sender_name = get_user_nickname(uid) or "Пользователь"
-                try:
-                    await context.bot.send_message(
-                        chat_id=owner_id,
-                        text=f"🤝 ПАРТНЁРСКОЕ ПРЕДЛОЖЕНИЕ\n\n"
-                        f"👤 От: {sender_name} (ID: {uid})\n"
-                        f"📺 Канал: {channel_name}\n"
-                        f"📝 Сообщение:\n{text}\n\n"
-                        f"🔽 Что дальше?",
-                        reply_markup=InlineKeyboardMarkup([
-                            [InlineKeyboardButton("✅ ПРИНЯТЬ", callback_data=f"partner_accept_{uid}_{channel_id}")],
-                            [InlineKeyboardButton("❌ ОТКЛОНИТЬ", callback_data=f"partner_reject_{uid}_{channel_id}")],
-                        ])
-                    )
-                    await send_notification(
-                        context.bot,
-                        uid,
-                        "🤝 Партнёрство",
-                        f"Предложение отправлено владельцу канала {channel_name}",
-                        None
-                    )
-                    reply = await msg.reply_text(
-                        f"✅ ПРЕДЛОЖЕНИЕ ОТПРАВЛЕНО!\n\n"
-                        f"📺 {channel_name}\n"
-                        f"👤 Владельцу: {owner_name}\n\n"
-                        f"Ожидайте ответа.",
-                        reply_markup=back_kb(uid)
-                    )
-                    add_user_message(uid, reply)
-                except:
-                    reply = await msg.reply_text(
-                        "❌ НЕ УДАЛОСЬ ОТПРАВИТЬ ПРЕДЛОЖЕНИЕ!\n\n"
-                        "Возможно, владелец канала не зарегистрирован в боте.",
-                        reply_markup=back_kb(uid)
-                    )
-                    add_user_message(uid, reply)
-            else:
-                reply = await msg.reply_text("❌ КАНАЛ НЕ НАЙДЕН!", reply_markup=back_kb(uid))
-                add_user_message(uid, reply)
-        else:
-            reply = await msg.reply_text("❌ ОШИБКА! Канал не выбран.", reply_markup=back_kb(uid))
-            add_user_message(uid, reply)
-        context.user_data['partnership_wait'] = False
-        context.user_data['partnership_text_wait'] = False
-        context.user_data['partnership_channel_id'] = None
-        context.user_data['partnership_channel_name'] = None
         await delete_user_messages(context.bot, uid, keep_last=1)
         return
     
@@ -3785,18 +3665,6 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await edit_current(f"📝 ОТЗЫВ О ФУНКЦИИ: {feature}\n\n⭐ Оценка: {rating}/5\n\n📝 Напишите текст отзыва:", back_kb(uid))
         return
     
-    # ===== ПАРТНЁРСТВО =====
-    if data == 'partnership':
-        if not is_subscribed(uid):
-            await edit_current("❌ ТРЕБУЕТСЯ ПОДПИСКА!", back_kb(uid))
-            return
-        if not get_user_channels(uid):
-            await edit_current("❌ Нужен хотя бы 1 канал!", back_kb(uid))
-            return
-        await edit_current("🤝 ПАРТНЁРСТВО\n\nВведите ссылку или ID канала, с которым хотите сотрудничать:\n\n📌 Примеры:\n• https://t.me/partner_channel\n• @partner_channel\n• -1001234567890\n\nБот автоматически найдёт канал и отправит предложение владельцу.", back_kb(uid))
-        context.user_data['partnership_wait'] = True
-        return
-    
     # ===== ВП (ВЗАИМОПОСТ) =====
     if data == 'vp_menu':
         if not is_subscribed(uid) and uid != OWNER_ID:
@@ -4048,37 +3916,6 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await edit_current("❌ НЕ УДАЛОСЬ ОТПРАВИТЬ ЗАЯВКУ!", back_kb(uid))
         else:
             await edit_current("❌ КАНАЛ НЕ НАЙДЕН!", back_kb(uid))
-        return
-    
-    # ===== ОБРАБОТКА ПАРТНЁРСТВА =====
-    if data.startswith('partner_accept_'):
-        parts = data.split('_')
-        from_id = int(parts[2])
-        channel_id = int(parts[3])
-        ch = get_channel_by_channel_id(channel_id)
-        if ch and ch['owner_id'] == uid:
-            try:
-                await context.bot.send_message(chat_id=from_id, text=f"🤝 ПАРТНЁРСТВО ПРИНЯТО!\n\nВладелец канала {ch['channel_name']} принял ваше предложение.\nСвяжитесь для обсуждения деталей.")
-                await edit_current("✅ ПАРТНЁРСТВО ПРИНЯТО!", back_kb(uid))
-            except:
-                await edit_current("✅ ПРИНЯТО!", back_kb(uid))
-        else:
-            await edit_current("❌ ДОСТУП ЗАПРЕЩЁН!", back_kb(uid))
-        return
-    
-    if data.startswith('partner_reject_'):
-        parts = data.split('_')
-        from_id = int(parts[2])
-        channel_id = int(parts[3])
-        ch = get_channel_by_channel_id(channel_id)
-        if ch and ch['owner_id'] == uid:
-            try:
-                await context.bot.send_message(chat_id=from_id, text=f"🤝 ПАРТНЁРСТВО ОТКЛОНЕНО\n\nВладелец канала {ch['channel_name']} отклонил ваше предложение.")
-                await edit_current("❌ ПАРТНЁРСТВО ОТКЛОНЕНО!", back_kb(uid))
-            except:
-                await edit_current("❌ ОТКЛОНЕНО!", back_kb(uid))
-        else:
-            await edit_current("❌ ДОСТУП ЗАПРЕЩЁН!", back_kb(uid))
         return
     
     # ===== КОД =====

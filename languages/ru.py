@@ -15,7 +15,6 @@ LANGUAGE = {
     'connect_channel': '🔗 ПРИВЯЗАТЬ КАНАЛ',
     'disconnect_channel': '❌ ОТВЯЗАТЬ КАНАЛ',
     'channel_settings': '⚙️ НАСТРОЙКИ КАНАЛА',
-    'partnership': '🤝 ПАРТНЁРСТВО',
     'search_channels': '🔍 ПОИСК КАНАЛОВ',
     'search_users': '🔍 ПОИСК ЛЮДЕЙ',
     'language': '🌍 ЯЗЫК',
