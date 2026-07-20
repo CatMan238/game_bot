@@ -4005,8 +4005,9 @@ def main():
     print("⚡ Напиши /start в Telegram!")
     print("=" * 60)
     
-    # Возвращаем application для использования в app.py
-    return application
+    # Запускаем polling
+    application.run_polling()
 
-# Создаём глобальный экземпляр для импорта в app.py
-application = main()
+# Если файл запускается напрямую
+if __name__ == '__main__':
+    run_bot()
