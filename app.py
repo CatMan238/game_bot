@@ -1,7 +1,7 @@
 import os
 import threading
 from flask import Flask, request
-from main import main, application, BOT_TOKEN
+from main import application, BOT_TOKEN
 
 app = Flask(__name__)
 
@@ -27,10 +27,7 @@ def set_webhook():
     return resp.json()
 
 if __name__ == '__main__':
-    # Запускаем Flask
     port = int(os.environ.get('PORT', 10000))
-    # Устанавливаем webhook при старте
     with app.test_client() as client:
         client.get('/set_webhook')
-    # Запускаем Flask (без polling, только webhook)
     app.run(host='0.0.0.0', port=port)
