@@ -13,13 +13,14 @@ def index():
 def health():
     return "OK"
 
-def start_bot():
-    main()  # теперь это функция из main.py
-
-if __name__ == '__main__':
-    # Запускаем бота в отдельном потоке
-    bot_thread = threading.Thread(target=start_bot, daemon=True)
-    bot_thread.start()
-    
+def run_flask():
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port)
+
+if __name__ == '__main__':
+    # Flask в фоне
+    flask_thread = threading.Thread(target=run_flask, daemon=True)
+    flask_thread.start()
+    
+    # Бот в основном потоке
+    main()
