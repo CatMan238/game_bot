@@ -3930,6 +3930,18 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ============================================
 
 def main():
+    # ===== СБРОС СТАРОЙ СЕССИИ (решает Conflict) =====
+    try:
+        import requests
+        # Удаляем вебхук и отбрасываем все накопленные обновления
+        resp = requests.get(
+            f'https://api.telegram.org/bot{BOT_TOKEN}/deleteWebhook?drop_pending_updates=True'
+        )
+        print("✅ Webhook сброшен:", resp.json())
+    except Exception as e:
+        print("⚠️ Ошибка сброса webhook:", e)
+    
+    # ===== ДАЛЕЕ СТАНДАРТНАЯ ИНИЦИАЛИЗАЦИЯ =====
     init_db()
     application = Application.builder().token(BOT_TOKEN).build()
     
