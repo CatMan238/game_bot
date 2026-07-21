@@ -11,7 +11,6 @@ def get_db():
     return conn
 
 def add_column_if_not_exists(cursor, table, column, column_type):
-    """Проверяет наличие колонки и добавляет её если отсутствует"""
     try:
         cursor.execute(f"SELECT {column} FROM {table} LIMIT 1")
     except sqlite3.OperationalError:
@@ -29,20 +28,59 @@ def init_db():
             user_id INTEGER PRIMARY KEY,
             username TEXT,
             language TEXT DEFAULT 'ru',
-            subscription_end TEXT,
-            is_owner INTEGER DEFAULT 0,
-            is_banned INTEGER DEFAULT 0,
             registered INTEGER DEFAULT 0,
             adult_verified INTEGER DEFAULT 0,
             name_changes INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    
-    # Добавляем недостающие колонки (миграция)
     add_column_if_not_exists(cursor, 'users', 'registered', 'INTEGER DEFAULT 0')
     add_column_if_not_exists(cursor, 'users', 'adult_verified', 'INTEGER DEFAULT 0')
     add_column_if_not_exists(cursor, 'users', 'name_changes', 'INTEGER DEFAULT 0')
+    
+    # ===== НИКНЕЙМЫ =====
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS nicknames (
+            user_id INTEGER PRIMARY KEY,
+            nickname TEXT UNIQUE,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # ===== ПОДПИСКИ (с автопродлением) =====
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS subscriptions (
+            user_id INTEGER PRIMARY KEY,
+            end_date TEXT,
+            auto_renew INTEGER DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # ===== ПЛАТЁЖНЫЕ МЕТОДЫ (карты) =====
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS payment_methods (
+            user_id INTEGER PRIMARY KEY,
+            payment_method_id TEXT,
+            last4 TEXT,
+            card_type TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # ===== ИСТОРИЯ ПЛАТЕЖЕЙ =====
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS payments_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            amount INTEGER,
+            currency TEXT DEFAULT 'RUB',
+            status TEXT,
+            payment_id TEXT,
+            plan_type TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
     
     # ===== КАНАЛЫ =====
     cursor.execute('''
@@ -52,7 +90,6 @@ def init_db():
             channel_name TEXT,
             owner_id INTEGER,
             category TEXT,
-            subscription_end TEXT,
             privacy TEXT DEFAULT 'public',
             subscribers INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -95,7 +132,7 @@ def init_db():
         )
     ''')
     
-    # ===== НАСТРОЙКИ (ГЛОБАЛЬНЫЕ) =====
+    # ===== НАСТРОЙКИ =====
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
@@ -117,48 +154,7 @@ def init_db():
         )
     ''')
     
-    # ===== БЕТА-ФИЧИ =====
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS beta_features (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            code TEXT,
-            description TEXT,
-            status TEXT DEFAULT 'testing',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            promoted_at TIMESTAMP
-        )
-    ''')
-    
-    # ===== ЛОГ ОБНОВЛЕНИЙ =====
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS update_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            version TEXT,
-            changes TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # ===== НИКНЕЙМЫ (ОТДЕЛЬНАЯ ТАБЛИЦА ДЛЯ НАДЁЖНОСТИ) =====
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS nicknames (
-            user_id INTEGER PRIMARY KEY,
-            nickname TEXT UNIQUE,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # ===== ПОДПИСКИ (ОТДЕЛЬНАЯ ТАБЛИЦА) =====
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS subscriptions (
-            user_id INTEGER PRIMARY KEY,
-            end_date TEXT,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-
-        # ===== УВЕДОМЛЕНИЯ (ПОЧТА) =====
+    # ===== УВЕДОМЛЕНИЯ =====
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS notifications (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -173,15 +169,14 @@ def init_db():
     
     # ===== ДОБАВЛЯЕМ ВЛАДЕЛЬЦА =====
     cursor.execute('''
-        INSERT OR IGNORE INTO users (user_id, is_owner, registered, adult_verified) 
-        VALUES (?, 1, 1, 1)
+        INSERT OR IGNORE INTO users (user_id, registered, adult_verified) 
+        VALUES (?, 1, 1)
     ''', (OWNER_ID,))
     
-    # Подписка для владельца на 10 лет
     end_date = (datetime.now() + timedelta(days=3650)).strftime('%Y-%m-%d')
     cursor.execute('''
-        INSERT OR REPLACE INTO subscriptions (user_id, end_date) 
-        VALUES (?, ?)
+        INSERT OR REPLACE INTO subscriptions (user_id, end_date, auto_renew) 
+        VALUES (?, ?, 1)
     ''', (OWNER_ID, end_date))
     
     conn.commit()
@@ -194,10 +189,7 @@ def init_db():
 def create_user(user_id, username):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('''
-        INSERT OR IGNORE INTO users (user_id, username) 
-        VALUES (?, ?)
-    ''', (user_id, username))
+    cursor.execute('INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)', (user_id, username))
     conn.commit()
     conn.close()
 
@@ -284,10 +276,7 @@ def get_user_nickname(user_id):
 def set_user_nickname(user_id, nickname):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('''
-        INSERT OR REPLACE INTO nicknames (user_id, nickname, updated_at) 
-        VALUES (?, ?, CURRENT_TIMESTAMP)
-    ''', (user_id, nickname))
+    cursor.execute('INSERT OR REPLACE INTO nicknames (user_id, nickname, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)', (user_id, nickname))
     conn.commit()
     conn.close()
 
@@ -312,10 +301,7 @@ def get_subscription_end(user_id):
 def set_subscription(user_id, end_date):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('''
-        INSERT OR REPLACE INTO subscriptions (user_id, end_date, updated_at) 
-        VALUES (?, ?, CURRENT_TIMESTAMP)
-    ''', (user_id, end_date))
+    cursor.execute('INSERT OR REPLACE INTO subscriptions (user_id, end_date, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)', (user_id, end_date))
     conn.commit()
     conn.close()
 
@@ -330,18 +316,82 @@ def is_subscribed(user_id):
             return False
     return False
 
+def set_auto_renew(user_id, enabled):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE subscriptions SET auto_renew = ? WHERE user_id = ?', (1 if enabled else 0, user_id))
+    conn.commit()
+    conn.close()
+
+def get_auto_renew(user_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    result = cursor.execute('SELECT auto_renew FROM subscriptions WHERE user_id = ?', (user_id,)).fetchone()
+    conn.close()
+    return result['auto_renew'] == 1 if result else 0
+
+# ============================================
+#  ПЛАТЁЖНЫЕ МЕТОДЫ
+# ============================================
+
+def save_payment_method(user_id, payment_method_id, last4, card_type):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT OR REPLACE INTO payment_methods (user_id, payment_method_id, last4, card_type)
+        VALUES (?, ?, ?, ?)
+    ''', (user_id, payment_method_id, last4, card_type))
+    conn.commit()
+    conn.close()
+
+def get_payment_method(user_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    result = cursor.execute('SELECT * FROM payment_methods WHERE user_id = ?', (user_id,)).fetchone()
+    conn.close()
+    return result
+
+def delete_payment_method(user_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM payment_methods WHERE user_id = ?', (user_id,))
+    conn.commit()
+    conn.close()
+
+# ============================================
+#  ИСТОРИЯ ПЛАТЕЖЕЙ
+# ============================================
+
+def add_payment_history(user_id, amount, status, payment_id, plan_type):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO payments_history (user_id, amount, status, payment_id, plan_type)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (user_id, amount, status, payment_id, plan_type))
+    conn.commit()
+    conn.close()
+
+def get_payment_history(user_id, limit=10):
+    conn = get_db()
+    cursor = conn.cursor()
+    history = cursor.execute('''
+        SELECT * FROM payments_history WHERE user_id = ? ORDER BY created_at DESC LIMIT ?
+    ''', (user_id, limit)).fetchall()
+    conn.close()
+    return history
+
 # ============================================
 #  КАНАЛЫ
 # ============================================
 
-def add_channel_db(channel_id, channel_name, owner_id, category, subscription_end, privacy='public', subscribers=0):
+def add_channel_db(channel_id, channel_name, owner_id, category, privacy='public', subscribers=0):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT OR REPLACE INTO channels 
-        (channel_id, channel_name, owner_id, category, subscription_end, privacy, subscribers) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''', (channel_id, channel_name, owner_id, category, subscription_end, privacy, subscribers))
+        INSERT OR REPLACE INTO channels (channel_id, channel_name, owner_id, category, privacy, subscribers) 
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (channel_id, channel_name, owner_id, category, privacy, subscribers))
     conn.commit()
     conn.close()
     return True
@@ -370,7 +420,7 @@ def get_all_channels():
     conn.close()
     return channels
 
-def get_channel_by_id(channel_id):
+def get_channel_by_channel_id(channel_id):
     conn = get_db()
     cursor = conn.cursor()
     channel = cursor.execute('SELECT * FROM channels WHERE channel_id = ?', (channel_id,)).fetchone()
@@ -397,13 +447,6 @@ def set_channel_privacy(channel_id, privacy):
     cursor.execute('UPDATE channels SET privacy = ? WHERE channel_id = ?', (privacy, channel_id))
     conn.commit()
     conn.close()
-
-def get_channel_subscribers_count(channel_id):
-    conn = get_db()
-    cursor = conn.cursor()
-    result = cursor.execute('SELECT subscribers FROM channels WHERE channel_id = ?', (channel_id,)).fetchone()
-    conn.close()
-    return result['subscribers'] if result else 0
 
 def admin_delete_channel(channel_id):
     conn = get_db()
@@ -446,32 +489,21 @@ def del_blacklist_word(channel_id, word):
 def add_scheduled_post(channel_id, text, media, scheduled_time):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO scheduled_posts (channel_id, post_text, post_media, scheduled_time) 
-        VALUES (?, ?, ?, ?)
-    ''', (channel_id, text, media, scheduled_time))
+    cursor.execute('INSERT INTO scheduled_posts (channel_id, post_text, post_media, scheduled_time) VALUES (?, ?, ?, ?)', (channel_id, text, media, scheduled_time))
     conn.commit()
     conn.close()
 
 def get_scheduled_posts(channel_id):
     conn = get_db()
     cursor = conn.cursor()
-    posts = cursor.execute('''
-        SELECT * FROM scheduled_posts 
-        WHERE channel_id = ? AND is_sent = 0 AND scheduled_time > datetime('now')
-        ORDER BY scheduled_time ASC
-    ''', (channel_id,)).fetchall()
+    posts = cursor.execute('SELECT * FROM scheduled_posts WHERE channel_id = ? AND is_sent = 0 AND scheduled_time > datetime("now") ORDER BY scheduled_time ASC', (channel_id,)).fetchall()
     conn.close()
     return posts
 
 def get_all_scheduled_posts():
     conn = get_db()
     cursor = conn.cursor()
-    posts = cursor.execute('''
-        SELECT * FROM scheduled_posts 
-        WHERE is_sent = 0 AND scheduled_time > datetime('now')
-        ORDER BY scheduled_time ASC
-    ''',).fetchall()
+    posts = cursor.execute('SELECT * FROM scheduled_posts WHERE is_sent = 0 AND scheduled_time > datetime("now") ORDER BY scheduled_time ASC').fetchall()
     conn.close()
     return posts
 
@@ -489,10 +521,7 @@ def del_scheduled_post(post_id):
 def create_promo_code(code, name, max_uses, days):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO promo_codes (code, name, max_uses, subscription_days) 
-        VALUES (?, ?, ?, ?)
-    ''', (code, name, max_uses, days))
+    cursor.execute('INSERT INTO promo_codes (code, name, max_uses, subscription_days) VALUES (?, ?, ?, ?)', (code, name, max_uses, days))
     conn.commit()
     conn.close()
 
@@ -525,7 +554,7 @@ def del_promo_code(code):
     conn.close()
 
 # ============================================
-#  НАСТРОЙКИ (ГЛОБАЛЬНЫЕ)
+#  НАСТРОЙКИ
 # ============================================
 
 def get_setting(key):
@@ -541,57 +570,6 @@ def set_setting(key, value):
     cursor.execute('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', (key, value))
     conn.commit()
     conn.close()
-
-# ============================================
-#  ТЕСТЕРЫ
-# ============================================
-
-def is_tester(user_id):
-    return get_setting(f"tester_{user_id}") == '1'
-
-def get_all_testers():
-    conn = get_db()
-    cursor = conn.cursor()
-    testers = cursor.execute("SELECT key FROM settings WHERE key LIKE 'tester_%' AND value = '1'").fetchall()
-    conn.close()
-    return [int(t['key'].replace('tester_', '')) for t in testers]
-
-# ============================================
-#  НАСТРОЙКИ КАНАЛОВ
-# ============================================
-
-def get_welcome_text(channel_id):
-    return get_setting(f"welcome_{channel_id}")
-
-def set_welcome_text(channel_id, text):
-    set_setting(f"welcome_{channel_id}", text)
-
-def get_farewell_text(channel_id):
-    return get_setting(f"farewell_{channel_id}")
-
-def set_farewell_text(channel_id, text):
-    set_setting(f"farewell_{channel_id}", text)
-
-def get_captcha_settings(channel_id):
-    q = get_setting(f"captcha_{channel_id}")
-    if q:
-        try:
-            return json.loads(q)
-        except:
-            return None
-    return None
-
-def set_captcha_settings(channel_id, question, answers):
-    set_setting(f"captcha_{channel_id}", json.dumps({'question': question, 'answers': answers}))
-
-def del_captcha_settings(channel_id):
-    set_setting(f"captcha_{channel_id}", None)
-
-def get_auto_approve(channel_id):
-    return get_setting(f"auto_approve_{channel_id}") == '1'
-
-def set_auto_approve(channel_id, enabled):
-    set_setting(f"auto_approve_{channel_id}", '1' if enabled else '0')
 
 # ============================================
 #  ВП (ВЗАИМОПОСТ)
@@ -612,10 +590,7 @@ def set_vp_timer(hours):
 def add_vp_post(user_id, channel_id, media, text, is_adult, category):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO vp_posts (user_id, channel_id, media, text, is_adult, category)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (user_id, channel_id, media, text, 1 if is_adult else 0, category))
+    cursor.execute('INSERT INTO vp_posts (user_id, channel_id, media, text, is_adult, category) VALUES (?, ?, ?, ?, ?, ?)', (user_id, channel_id, media, text, 1 if is_adult else 0, category))
     conn.commit()
     conn.close()
     return True
@@ -623,21 +598,10 @@ def add_vp_post(user_id, channel_id, media, text, is_adult, category):
 def get_vp_posts(limit=3, offset=0, adult_only=True):
     conn = get_db()
     cursor = conn.cursor()
-    
     if adult_only:
-        posts = cursor.execute('''
-            SELECT * FROM vp_posts 
-            WHERE is_adult = 0
-            ORDER BY created_at DESC
-            LIMIT ? OFFSET ?
-        ''', (limit, offset)).fetchall()
+        posts = cursor.execute('SELECT * FROM vp_posts WHERE is_adult = 0 ORDER BY created_at DESC LIMIT ? OFFSET ?', (limit, offset)).fetchall()
     else:
-        posts = cursor.execute('''
-            SELECT * FROM vp_posts 
-            ORDER BY created_at DESC
-            LIMIT ? OFFSET ?
-        ''', (limit, offset)).fetchall()
-    
+        posts = cursor.execute('SELECT * FROM vp_posts ORDER BY created_at DESC LIMIT ? OFFSET ?', (limit, offset)).fetchall()
     total = cursor.execute('SELECT COUNT(*) FROM vp_posts').fetchone()[0]
     conn.close()
     return posts, total
@@ -673,12 +637,7 @@ def clear_all_vp_posts():
 def get_last_vp_post_time(user_id):
     conn = get_db()
     cursor = conn.cursor()
-    result = cursor.execute('''
-        SELECT created_at FROM vp_posts 
-        WHERE user_id = ? 
-        ORDER BY created_at DESC 
-        LIMIT 1
-    ''', (user_id,)).fetchone()
+    result = cursor.execute('SELECT created_at FROM vp_posts WHERE user_id = ? ORDER BY created_at DESC LIMIT 1', (user_id,)).fetchone()
     conn.close()
     if result:
         return datetime.strptime(result[0], '%Y-%m-%d %H:%M:%S')
@@ -687,14 +646,11 @@ def get_last_vp_post_time(user_id):
 def can_user_post_vp(user_id):
     if user_id == OWNER_ID:
         return True, "✅ РАЗРАБОТЧИК — БЕЗ ОГРАНИЧЕНИЙ!"
-    
     if not is_subscribed(user_id):
         return False, "❌ ТРЕБУЕТСЯ ПОДПИСКА!"
-    
     channels = get_user_channels(user_id)
     if not channels:
         return False, "❌ НУЖЕН ХОТЯ БЫ 1 ПРИВЯЗАННЫЙ КАНАЛ!"
-    
     timer_hours = get_vp_timer()
     last_post = get_last_vp_post_time(user_id)
     if last_post:
@@ -702,82 +658,61 @@ def can_user_post_vp(user_id):
         if hours_passed < timer_hours:
             remaining = timer_hours - hours_passed
             return False, f"⏳ ПОДОЖДИТЕ {int(remaining)} ЧАСОВ ДО СЛЕДУЮЩЕГО ПОСТА!"
-    
     return True, "✅ МОЖНО СОЗДАВАТЬ ПОСТ"
 
 # ============================================
-#  БЕТА-ФИЧИ
+#  УВЕДОМЛЕНИЯ
 # ============================================
 
-def add_beta_feature(name, code, description):
+def mark_all_notifications_read(user_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE notifications SET read = 1 WHERE user_id = ?', (user_id,))
+    conn.commit()
+    conn.close()
+
+def add_notification(user_id, notif_type, content, link_data=None):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO beta_features (name, code, description, status)
-        VALUES (?, ?, ?, 'testing')
-    ''', (name, code, description))
+        CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            type TEXT,
+            content TEXT,
+            link_data TEXT,
+            read INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    cursor.execute('INSERT INTO notifications (user_id, type, content, link_data) VALUES (?, ?, ?, ?)', (user_id, notif_type, content, link_data))
     conn.commit()
     conn.close()
-    return cursor.lastrowid
+    return True
 
-def get_beta_features(status='testing'):
+def get_user_notifications(user_id, unread_only=True):
     conn = get_db()
     cursor = conn.cursor()
-    if status == 'all':
-        features = cursor.execute('SELECT * FROM beta_features ORDER BY created_at DESC').fetchall()
+    if unread_only:
+        notifs = cursor.execute('SELECT * FROM notifications WHERE user_id = ? AND read = 0 ORDER BY created_at DESC', (user_id,)).fetchall()
     else:
-        features = cursor.execute('SELECT * FROM beta_features WHERE status = ? ORDER BY created_at DESC', (status,)).fetchall()
+        notifs = cursor.execute('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC', (user_id,)).fetchall()
     conn.close()
-    return features
+    return notifs
 
-def get_beta_feature(feature_id):
+def mark_notification_read(notif_id):
     conn = get_db()
     cursor = conn.cursor()
-    feature = cursor.execute('SELECT * FROM beta_features WHERE id = ?', (feature_id,)).fetchone()
-    conn.close()
-    return feature
-
-def promote_beta_feature(feature_id):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('''
-        UPDATE beta_features SET status = 'promoted', promoted_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-    ''', (feature_id,))
+    cursor.execute('UPDATE notifications SET read = 1 WHERE id = ?', (notif_id,))
     conn.commit()
     conn.close()
 
-def delete_beta_feature(feature_id):
+def delete_notification(notif_id):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('DELETE FROM beta_features WHERE id = ?', (feature_id,))
+    cursor.execute('DELETE FROM notifications WHERE id = ?', (notif_id,))
     conn.commit()
     conn.close()
-
-# ============================================
-#  ЛОГ ОБНОВЛЕНИЙ
-# ============================================
-
-def add_update_log(version, changes):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO update_log (version, changes)
-        VALUES (?, ?)
-    ''', (version, changes))
-    conn.commit()
-    conn.close()
-
-def get_update_logs(limit=20):
-    conn = get_db()
-    cursor = conn.cursor()
-    logs = cursor.execute('''
-        SELECT * FROM update_log 
-        ORDER BY created_at DESC 
-        LIMIT ?
-    ''', (limit,)).fetchall()
-    conn.close()
-    return logs
 
 # ============================================
 #  УДАЛЕНИЕ ПРОФИЛЯ
@@ -789,8 +724,9 @@ def delete_user_profile(user_id):
     cursor.execute('DELETE FROM users WHERE user_id = ?', (user_id,))
     cursor.execute('DELETE FROM nicknames WHERE user_id = ?', (user_id,))
     cursor.execute('DELETE FROM subscriptions WHERE user_id = ?', (user_id,))
+    cursor.execute('DELETE FROM payment_methods WHERE user_id = ?', (user_id,))
     cursor.execute('DELETE FROM channels WHERE owner_id = ?', (user_id,))
-    cursor.execute('DELETE FROM settings WHERE key LIKE ?', (f"tester_{user_id}",))
+    cursor.execute('DELETE FROM settings WHERE key LIKE ?', (f"blocked_{user_id}",))
     cursor.execute('DELETE FROM vp_posts WHERE user_id = ?', (user_id,))
     conn.commit()
     conn.close()

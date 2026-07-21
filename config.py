@@ -1,31 +1,44 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()  # загружает переменные из .env (локально)
+load_dotenv()
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 if not BOT_TOKEN:
-    raise Exception("❌ BOT_TOKEN не задан! Добавь переменную окружения BOT_TOKEN на Render или в .env")
+    raise Exception("❌ BOT_TOKEN не задан!")
 
 # ============================================
-#  ОСТАЛЬНЫЕ НАСТРОЙКИ (НЕ СЕКРЕТНЫЕ)
+#  ВЛАДЕЛЕЦ
 # ============================================
 OWNER_ID = 8210121398
-CHANNEL_NAME = "🔞GAME CONTENT🔞"
+
+# ============================================
+#  НАСТРОЙКИ БОТА
+# ============================================
 BOT_NAME = "Helper"
-
-SUBSCRIPTION_DAYS_MONTH = 30
-SUBSCRIPTION_DAYS_6MONTH = 180
-SUBSCRIPTION_DAYS_YEAR = 365
-
+CHANNEL_NAME = "🔞GAME CONTENT🔞"
+BOT_VERSION = "1.0.0"
 DATABASE_PATH = "bot.db"
-BOT_VERSION = "beta 0.5.5"
+
+# ============================================
+#  ПЛАТЁЖНЫЙ ПРОВАЙДЕР (YooKassa)
+# ============================================
+YOOKASSA_SHOP_ID = os.environ.get("YOOKASSA_SHOP_ID", "")
+YOOKASSA_SECRET_KEY = os.environ.get("YOOKASSA_SECRET_KEY", "")
+PROVIDER_TOKEN = os.environ.get("PROVIDER_TOKEN", "")
+
+# ============================================
+#  ЦЕНЫ (РУБЛИ)
+# ============================================
+PRICE_MONTH = 119
+PRICE_6MONTH = 643    # 6 * 119 * 0.9
+PRICE_YEAR = 1071     # 12 * 119 * 0.75
+
+# ============================================
+#  КАНАЛЫ
+# ============================================
 CHANNEL_NEWS_LINK = "https://t.me/HellperBotNews"
 CHANNEL_NEWS_NAME = "📢 НАШ КАНАЛ"
-
-# ============================================
-#  НИЖЕ НИЧЕГО НЕ МЕНЯЙ!
-# ============================================
 
 if BOT_TOKEN == "ЗАМЕНИ_НА_СВОЙ_ТОКЕН":
     raise Exception("❌ ОШИБКА: Не заполнен BOT_TOKEN!")
