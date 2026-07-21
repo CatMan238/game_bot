@@ -2172,79 +2172,56 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     # ===== ПРОФИЛЬ =====
+        # ===== ПРОФИЛЬ =====
     if data == 'profile':
-        nickname = get_user_nickname(uid) or "Не указан"
-        sub_end = get_subscription_end(uid)
-        sub_status = f"АКТИВНА ДО {sub_end}" if sub_end and is_subscribed(uid) else "НЕТУ"
-        adult_status = "✅ Подтверждён" if is_adult(uid) else "❌ Не подтверждён"
-        is_tester_user = "✅ Да" if is_tester(uid) else "❌ Нет"
-        is_blocked_user = "🔒 Да" if is_user_blocked(uid) else "❌ Нет"
-        channels = get_user_channels(uid)
-        channels_text = ""
-        if channels:
-            for ch in channels:
-                try:
-                    chat = await context.bot.get_chat(ch['channel_id'])
-                    channel_link = f"https://t.me/{chat.username}" if hasattr(chat, 'username') and chat.username else "Нет ссылки"
-                except:
-                    channel_link = "Недоступно"
-                channels_text += f"\n   📺 {ch['channel_name']}\n   🆔 ТГ ID: {ch['channel_id']}\n   🔗 Ссылка: {channel_link}\n   📂 {ch['category'] if ch['category'] else 'Не указана'}\n"
-        else:
-            channels_text = "\n   ❌ Нет каналов"
-        name_changes = get_name_changes(uid)
-        name_changes_text = "♾️ БЕЗЛИМИТ" if uid == OWNER_ID else f"{1 - name_changes} из 1"
-        notifs = get_user_notifications(uid, unread_only=True)
-        notif_count = len(notifs)
-        notif_text = f"📬 {notif_count} новых" if notif_count > 0 else "📭 Пусто"
-        text = (
-            f"👤 ПРОФИЛЬ\n\n"
-            f"👤 Никнейм: {nickname}\n"
-            f"🆔 ID в боте: {uid}\n"
-            f"🆔 ID в Telegram: {uid}\n"
-            f"📝 Смена имени: {name_changes_text}\n"
-            f"🔞 Возраст: {adult_status}\n"
-            f"🧪 Тестер: {is_tester_user}\n"
-            f"🔒 Заблокирован: {is_blocked_user}\n"
-            f"💰 ПОДПИСКА: {sub_status}\n"
-            f"{notif_text}\n"
-            f"📺 КАНАЛЫ:{channels_text}"
-        )
-        await edit_current(text, profile_kb(uid))
-        return
-    
-    if data == 'change_name':
-        if uid == OWNER_ID:
-            context.user_data['change_name_wait'] = True
-            await edit_current("📝 ВВЕДИТЕ НОВОЕ ИМЯ (безлимит):", back_kb(uid))
-            return
-        if get_name_changes(uid) >= 1:
-            await edit_current("❌ ЛИМИТ ИСЧЕРПАН! (1 раз)", back_kb(uid))
-            return
-        context.user_data['change_name_wait'] = True
-        await edit_current("📝 ВВЕДИТЕ НОВОЕ ИМЯ:", back_kb(uid))
-        return
-    
-    if data == 'change_name_infinite':
-        if uid != OWNER_ID:
-            return
-        context.user_data['change_name_wait'] = True
-        await edit_current("📝 ВВЕДИТЕ НОВОЕ ИМЯ (безлимит):", back_kb(uid))
-        return
-    
-    if data == 'delete_profile_confirm':
-        await edit_current("⚠️ ВЫ УВЕРЕНЫ?\n\nВсе данные будут потеряны!", InlineKeyboardMarkup([[InlineKeyboardButton("✅ ДА", callback_data='delete_profile_yes')], [InlineKeyboardButton("❌ НЕТ", callback_data='delete_profile_no')]]))
-        return
-    
-    if data == 'delete_profile_yes':
-        if delete_user_profile(uid):
-            log_main(uid, "Удалил профиль", "Успешно")
-            await edit_current("✅ ПРОФИЛЬ УДАЛЁН!\n\n/start для регистрации", None)
-        else:
-            await edit_current("❌ ОШИБКА!", back_kb(uid))
-        return
-    
-    if data == 'delete_profile_no':
-        await edit_current("✅ ОТМЕНЕНО!", back_kb(uid))
+        try:
+            nickname = get_user_nickname(uid) or "Не указан"
+            sub_end = get_subscription_end(uid)
+            sub_status = f"АКТИВНА ДО {sub_end}" if sub_end and is_subscribed(uid) else "НЕТУ"
+            adult_status = "✅ Подтверждён" if is_adult(uid) else "❌ Не подтверждён"
+            is_tester_user = "✅ Да" if is_tester(uid) else "❌ Нет"
+            is_blocked_user = "🔒 Да" if is_user_blocked(uid) else "❌ Нет"
+            channels = get_user_channels(uid)
+            channels_text = ""
+            if channels:
+                for ch in channels:
+                    try:
+                        chat = await context.bot.get_chat(ch['channel_id'])
+                        channel_link = f"https://t.me/{chat.username}" if hasattr(chat, 'username') and chat.username else "Нет ссылки"
+                    except:
+                        channel_link = "Недоступно"
+                    channels_text += f"\n   📺 {ch['channel_name']}\n   🆔 ТГ ID: {ch['channel_id']}\n   🔗 Ссылка: {channel_link}\n   📂 {ch['category'] if ch['category'] else 'Не указана'}\n"
+            else:
+                channels_text = "\n   ❌ Нет каналов"
+            name_changes = get_name_changes(uid)
+            name_changes_text = "♾️ БЕЗЛИМИТ" if uid == OWNER_ID else f"{1 - name_changes} из 1"
+            notifs = get_user_notifications(uid, unread_only=True)
+            notif_count = len(notifs)
+            notif_text = f"📬 {notif_count} новых" if notif_count > 0 else "📭 Пусто"
+            text = (
+                f"👤 ПРОФИЛЬ\n\n"
+                f"👤 Никнейм: {nickname}\n"
+                f"🆔 ID в боте: {uid}\n"
+                f"🆔 ID в Telegram: {uid}\n"
+                f"📝 Смена имени: {name_changes_text}\n"
+                f"🔞 Возраст: {adult_status}\n"
+                f"🧪 Тестер: {is_tester_user}\n"
+                f"🔒 Заблокирован: {is_blocked_user}\n"
+                f"💰 ПОДПИСКА: {sub_status}\n"
+                f"{notif_text}\n"
+                f"📺 КАНАЛЫ:{channels_text}"
+            )
+            await edit_current(text, profile_kb(uid))
+        except Exception as e:
+            import traceback
+            error_trace = traceback.format_exc()
+            # Логируем в файл (функция log_error должна быть определена)
+            log_error(f"Ошибка в профиле для {uid}: {e}\n{error_trace}")
+            # Показываем пользователю сообщение об ошибке
+            await edit_current(
+                f"❌ ОШИБКА ПРИ ЗАГРУЗКЕ ПРОФИЛЯ!\n\nКод ошибки: {str(e)[:100]}\n\nСообщите разработчику.",
+                back_kb(uid)
+            )
         return
     
     # ===== ПОЧТА/УВЕДОМЛЕНИЯ (ПУНКТ 19) =====
