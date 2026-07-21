@@ -157,6 +157,19 @@ def init_db():
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+
+        # ===== УВЕДОМЛЕНИЯ (ПОЧТА) =====
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            type TEXT,
+            content TEXT,
+            link_data TEXT,
+            read INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
     
     # ===== ДОБАВЛЯЕМ ВЛАДЕЛЬЦА =====
     cursor.execute('''

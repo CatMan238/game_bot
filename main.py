@@ -375,6 +375,13 @@ def get_channel_info_full(bot, channel_id):
 #  УВЕДОМЛЕНИЯ (ПОЧТА) - ПУНКТ 19
 # ============================================
 
+def mark_all_notifications_read(user_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE notifications SET read = 1 WHERE user_id = ?', (user_id,))
+    conn.commit()
+    conn.close()
+    
 def add_notification(user_id, notif_type, content, link_data=None):
     conn = get_db()
     cursor = conn.cursor()
