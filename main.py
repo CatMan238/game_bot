@@ -1739,6 +1739,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 title=f"Подписка {PLAN_NAMES[plan_type]}",
                 description=f"Доступ к боту на {days} дней",
                 payload=f"stars_{plan_type}_{uid}_{int(time.time())}",
+                provider_token="",
                 currency="XTR",
                 prices=[{"label": PLAN_NAMES[plan_type], "amount": stars}],
                 start_parameter="subscription",
