@@ -20,7 +20,6 @@ from database.db import *
 # ============================================
 #  НАСТРОЙКА ЛОГОВ
 # ============================================
-
 if not os.path.exists('logs'):
     os.makedirs('logs')
 
@@ -37,7 +36,6 @@ logger = logging.getLogger(__name__)
 # ============================================
 #  ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
 # ============================================
-
 BOT_STOPPED = False
 BOT_VERSION = "1.0.0"
 USER_MESSAGES = {}
@@ -51,113 +49,10 @@ CATEGORIES = [
 ]
 ADULT_CATEGORIES = ['18+', 'Эротика']
 
-# Цены в рублях
-PRICES = {
-    'month': 119,
-    '6month': 643,
-    'year': 1071,
-}
-
-PLAN_NAMES = {
-    'month': 'Месяц',
-    '6month': '6 месяцев',
-    'year': 'Год',
-}
-
-SUBSCRIPTION_DAYS = {
-    'month': 30,
-    '6month': 180,
-    'year': 365,
-}
-
-# ============================================
-#  ЯЗЫКИ
-# ============================================
-
-LANGUAGES = {
-    'ru': {
-        'main': '🏠 ГЛАВНОЕ МЕНЮ',
-        'back': '◀️ НАЗАД',
-        'yes': '✅ ДА',
-        'no': '❌ НЕТ',
-        'saved': '✅ СОХРАНЕНО!',
-        'no_access': '❌ ДОСТУП ЗАПРЕЩЁН!',
-        'no_sub': '❌ У ВАС НЕТ АКТИВНОЙ ПОДПИСКИ!',
-        'bot_stopped': '🔧 БОТ ЗАКРЫТ НА ТЕХНИЧЕСКОЕ ОБСЛУЖИВАНИЕ!\n\n⏳ Пожалуйста, подождите.',
-        'support_contact': '👤 @GanzalesSs920',
-        'profile': '👤 ПРОФИЛЬ',
-        'subscription': '💳 ПОДПИСКА',
-        'connect_channel': '🔗 ПРИВЯЗАТЬ КАНАЛ',
-        'disconnect_channel': '❌ ОТВЯЗАТЬ КАНАЛ',
-        'channel_settings': '⚙️ НАСТРОЙКИ КАНАЛА',
-        'search_channels': '🔍 ПОИСК КАНАЛОВ',
-        'search_users': '🔍 ПОИСК ЛЮДЕЙ',
-        'language': '🌍 ЯЗЫК',
-        'support': '💬 ПОДДЕРЖКА',
-        'developer': '⚙️ ДЛЯ РАЗРАБОТЧИКОВ',
-        'customize': '🎨 КАСТОМИЗАЦИЯ',
-        'change_name': '✏️ ИЗМЕНИТЬ ИМЯ',
-        'send_message': '💬 НАПИСАТЬ',
-        'delete_profile': '🗑 УДАЛИТЬ ПРОФИЛЬ',
-        'mail': '📬 ПОЧТА',
-        'subscription_active': 'АКТИВНА ДО {date}',
-        'subscription_none': 'НЕТУ',
-    },
-    'en': {
-        'main': '🏠 MAIN MENU',
-        'back': '◀️ BACK',
-        'yes': '✅ YES',
-        'no': '❌ NO',
-        'saved': '✅ SAVED!',
-        'no_access': '❌ ACCESS DENIED!',
-        'no_sub': '❌ NO ACTIVE SUBSCRIPTION!',
-        'bot_stopped': '🔧 BOT UNDER MAINTENANCE!\n\n⏳ Please wait.',
-        'support_contact': '👤 @GanzalesSs920',
-        'profile': '👤 PROFILE',
-        'subscription': '💳 SUBSCRIPTION',
-        'connect_channel': '🔗 CONNECT CHANNEL',
-        'disconnect_channel': '❌ DISCONNECT CHANNEL',
-        'channel_settings': '⚙️ CHANNEL SETTINGS',
-        'search_channels': '🔍 SEARCH CHANNELS',
-        'search_users': '🔍 SEARCH USERS',
-        'language': '🌍 LANGUAGE',
-        'support': '💬 SUPPORT',
-        'developer': '⚙️ DEVELOPER',
-        'customize': '🎨 CUSTOMIZE',
-        'change_name': '✏️ CHANGE NAME',
-        'send_message': '💬 SEND MESSAGE',
-        'delete_profile': '🗑 DELETE PROFILE',
-        'mail': '📬 MAIL',
-        'subscription_active': 'ACTIVE UNTIL {date}',
-        'subscription_none': 'NONE',
-    }
-}
-
-def get_lang(user_id):
-    return get_user_language(user_id) or 'ru'
-
-def get_text(user_id, key, **kwargs):
-    lang = get_lang(user_id)
-    lang_dict = LANGUAGES.get(lang, LANGUAGES['ru'])
-    parts = key.split('.')
-    text = lang_dict
-    for p in parts:
-        if isinstance(text, dict):
-            text = text.get(p, key)
-        else:
-            return key
-    if isinstance(text, dict):
-        return key
-    for k, v in kwargs.items():
-        text = text.replace(f"{{{k}}}", str(v))
-    return text
-
 # ============================================
 #  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 # ============================================
-
 def clear_user_context(context):
-    """Удаляет все временные флаги и данные, связанные с ожиданием ввода"""
     keys = [
         'reg_wait', 'age_wait', 'change_name_wait', 'send_message_wait', 'spam_add_wait',
         'welcome_edit_text_wait', 'farewell_edit_text_wait', 'captcha_q_wait', 'captcha_a_wait',
@@ -168,7 +63,7 @@ def clear_user_context(context):
         'feedback_wait', 'connect_wait', 'connect_by_link', 'connect_by_username',
         'connect_by_forward_wait', 'search_by_name_wait', 'search_by_bot_id_wait',
         'search_by_tg_id_wait', 'search_users_wait', 'vp_timer_custom_wait',
-        'code_wait', 'payment_settings_wait', 'selected_categories', 'connect_channel_id',
+        'code_wait', 'selected_categories', 'connect_channel_id',
         'connect_channel_name', 'vp_post', 'post_data', 'post_channel_id', 'temp_name',
         'send_message_target', 'send_message_anonymous', 'broadcast_audience',
         'gift_type', 'feedback_feature', 'feedback_rating', 'captcha_q',
@@ -395,10 +290,7 @@ def get_channel_info_full(bot, channel_id):
 def add_notification(user_id, notif_type, content, link_data=None):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO notifications (user_id, type, content, link_data)
-        VALUES (?, ?, ?, ?)
-    ''', (user_id, notif_type, content, link_data))
+    cursor.execute('INSERT INTO notifications (user_id, type, content, link_data) VALUES (?, ?, ?, ?)', (user_id, notif_type, content, link_data))
     conn.commit()
     conn.close()
     return True
@@ -455,7 +347,6 @@ def is_user_blocked(user_id):
 # ============================================
 #  КЛАВИАТУРЫ
 # ============================================
-
 def main_kb(user_id):
     kb = [
         [InlineKeyboardButton("💳 ПОДПИСКА", callback_data='subscription'), InlineKeyboardButton("👤 ПРОФИЛЬ", callback_data='profile')],
@@ -483,9 +374,9 @@ def reg_kb(user_id):
 
 def subscription_kb(user_id):
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("📅 НА МЕСЯЦ - 119 руб", callback_data='sub_month')],
-        [InlineKeyboardButton("📅 НА 6 МЕСЯЦЕВ - 643 руб", callback_data='sub_6month')],
-        [InlineKeyboardButton("📅 НА ГОД - 1071 руб", callback_data='sub_year')],
+        [InlineKeyboardButton(f"📅 НА МЕСЯЦ - {PRICE_MONTH} ⭐", callback_data='sub_month')],
+        [InlineKeyboardButton(f"📅 НА 6 МЕСЯЦЕВ - {PRICE_6MONTH} ⭐", callback_data='sub_6month')],
+        [InlineKeyboardButton(f"📅 НА ГОД - {PRICE_YEAR} ⭐", callback_data='sub_year')],
         [InlineKeyboardButton("🎟 АКТИВАЦИЯ КОДА", callback_data='activate_code')],
         [InlineKeyboardButton("◀️ НАЗАД", callback_data='back')],
     ])
@@ -547,18 +438,15 @@ def channel_settings_kb(user_id, channel_id):
     anti_spam_enabled = get_setting(f"anti_spam_enabled_{channel_id}") == '1'
     auto_approve_enabled = get_auto_approve(channel_id)
     privacy = get_channel_privacy(channel_id)
-    
     welcome_status = "✅ ВКЛ" if welcome_enabled else "❌ ВЫКЛ"
     farewell_status = "✅ ВКЛ" if farewell_enabled else "❌ ВЫКЛ"
     anti_spam_status = "✅ ВКЛ" if anti_spam_enabled else "❌ ВЫКЛ"
     auto_approve_status = "✅ ВКЛ" if auto_approve_enabled else "❌ ВЫКЛ"
     privacy_status = "🔒 СКРЫТ" if privacy == 'private' else "🔓 ВИДЕН"
-    
     ch = get_channel_by_channel_id(channel_id)
     channel_info_text = ""
     if ch:
         channel_info_text = f"\n📺 {ch['channel_name']}\n📂 {ch['category'] if ch['category'] else 'Без категории'}\n👥 {ch['subscribers'] if ch['subscribers'] else 0}\n🔒 {privacy_status}"
-    
     kb = [
         [InlineKeyboardButton(f"ℹ️ ИНФОРМАЦИЯ {channel_info_text[:30]}", callback_data=f"channel_info_{channel_id}")],
         [InlineKeyboardButton(f"🚫 ФИЛЬТР СЛОВ {anti_spam_status}", callback_data=f"toggle_anti_spam_{channel_id}")],
@@ -728,35 +616,48 @@ def user_profile_kb(user_id, target_id):
     ])
 
 # ============================================
-#  ОБРАБОТЧИКИ КОМАНД
+#  КОМАНДА /joingroup (для владельца)
 # ============================================
+async def join_group_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if user.id != OWNER_ID:
+        await update.message.reply_text("❌ Доступ запрещён.")
+        return
+    args = context.args
+    if not args:
+        await update.message.reply_text("❗ Использование: /joingroup -1001234567890")
+        return
+    chat_id = args[0]
+    if not chat_id.lstrip('-').isdigit():
+        await update.message.reply_text("❌ ID должен быть числом.")
+        return
+    chat_id = int(chat_id)
+    try:
+        await context.bot.join_chat(chat_id)
+        await update.message.reply_text(f"✅ Бот успешно вступил в группу {chat_id}!")
+    except Exception as e:
+        await update.message.reply_text(f"❌ Ошибка: {e}")
 
+# ============================================
+#  ОБРАБОТЧИК КОМАНДЫ /start
+# ============================================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     uid = user.id
-    
     clear_user_context(context)
-    
     if is_user_blocked(uid):
         await update.message.reply_text("❌ ВАШ АККАУНТ ЗАБЛОКИРОВАН!\n\nОбратитесь к разработчику: @GanzalesSs920")
         return
-    
     create_user(uid, user.username)
     global BOT_STOPPED
     await clear_user_messages(context.bot, uid)
     log_main(uid, "Запуск бота", "/start")
-    
     if BOT_STOPPED and uid != OWNER_ID:
-        msg = await update.message.reply_text(
-            "🔧 БОТ ЗАКРЫТ НА ТО!\n\n⏳ Пожалуйста, подождите.",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("💬 ПОДДЕРЖКА", callback_data='support')]])
-        )
+        msg = await update.message.reply_text("🔧 БОТ ЗАКРЫТ НА ТО!\n\n⏳ Пожалуйста, подождите.", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("💬 ПОДДЕРЖКА", callback_data='support')]]))
         add_user_message(uid, msg)
         return
-    
     reg_text = get_setting("reg_text") or "🌟 ДОБРО ПОЖАЛОВАТЬ В {BOT_NAME}! 🌟\n\n📋 Для использования бота необходимо ЗАРЕГИСТРИРОВАТЬСЯ.\n\n🔹 Нажмите кнопку '✅ РЕГИСТРАЦИЯ'"
     reg_media = get_setting("reg_media")
-    
     if not is_registered(uid):
         text = reg_text.replace("{BOT_NAME}", BOT_NAME)
         if reg_media:
@@ -779,15 +680,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg = await update.message.reply_text(text, reply_markup=reg_kb(uid))
         add_user_message(uid, msg)
         return
-    
     if uid == OWNER_ID and not is_subscribed(uid):
         end_date = (datetime.now() + timedelta(days=3650)).strftime('%Y-%m-%d')
         set_subscription(uid, end_date)
-    
     custom_desc = get_setting("global_desc") or "Всем привет и спасибо что выбрали меня! 🎉"
     custom_media = get_setting("global_media")
     text = f"🌟 ДОБРО ПОЖАЛОВАТЬ В {BOT_NAME}! 🌟\n\n{custom_desc}"
-    
     if custom_media:
         try:
             msg = await update.message.reply_photo(photo=custom_media, caption=text, reply_markup=main_kb(uid))
@@ -805,35 +703,29 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     return
                 except Exception as e:
                     log_error(f"Custom media error: {e}")
-    
     msg = await update.message.reply_text(text, reply_markup=main_kb(uid))
     add_user_message(uid, msg)
 
+# ============================================
+#  ОБРАБОТЧИК СООБЩЕНИЙ (handle_msg) – ЧАСТЬ 2
+# ============================================
 async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global BOT_STOPPED
     if not update.effective_user:
         return
-    
     u = update.effective_user
     uid = u.id
     msg = update.message
-    
     if is_user_blocked(uid):
         await msg.reply_text("❌ ВАШ АККАУНТ ЗАБЛОКИРОВАН!\n\nОбратитесь к разработчику: @GanzalesSs920")
         return
-    
     try:
         await msg.delete()
     except:
         pass
-    
     log_main(uid, "Сообщение", msg.text[:50] if msg.text else "Медиа")
-    
     if BOT_STOPPED and uid != OWNER_ID:
-        reply = await msg.reply_text(
-            "🔧 БОТ ЗАКРЫТ НА ТО!\n\n⏳ Пожалуйста, подождите.",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("💬 ПОДДЕРЖКА", callback_data='support')]])
-        )
+        reply = await msg.reply_text("🔧 БОТ ЗАКРЫТ НА ТО!\n\n⏳ Пожалуйста, подождите.", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("💬 ПОДДЕРЖКА", callback_data='support')]]))
         add_user_message(uid, reply)
         await delete_user_messages(context.bot, uid, keep_last=1)
         return
@@ -874,10 +766,7 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data['age_wait'] = False
             context.user_data['temp_name'] = None
             log_main(uid, "Регистрация", f"{name} (18+)")
-            reply = await msg.reply_text(
-                f"✅ РЕГИСТРАЦИЯ ЗАВЕРШЕНА!\n\n👤 {name}\n🆔 ID: {uid}\n🔞 Возраст подтверждён!",
-                reply_markup=main_kb(uid)
-            )
+            reply = await msg.reply_text(f"✅ РЕГИСТРАЦИЯ ЗАВЕРШЕНА!\n\n👤 {name}\n🆔 ID: {uid}\n🔞 Возраст подтверждён!", reply_markup=main_kb(uid))
             add_user_message(uid, reply)
             await delete_user_messages(context.bot, uid, keep_last=1)
         elif answer in ['нет', 'no', '0']:
@@ -888,10 +777,7 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data['age_wait'] = False
             context.user_data['temp_name'] = None
             log_main(uid, "Регистрация", f"{name} (18-)")
-            reply = await msg.reply_text(
-                f"✅ РЕГИСТРАЦИЯ ЗАВЕРШЕНА!\n\n👤 {name}\n🆔 ID: {uid}\n🔞 Доступ к 18+ контенту ЗАКРЫТ!",
-                reply_markup=main_kb(uid)
-            )
+            reply = await msg.reply_text(f"✅ РЕГИСТРАЦИЯ ЗАВЕРШЕНА!\n\n👤 {name}\n🆔 ID: {uid}\n🔞 Доступ к 18+ контенту ЗАКРЫТ!", reply_markup=main_kb(uid))
             add_user_message(uid, reply)
             await delete_user_messages(context.bot, uid, keep_last=1)
         else:
@@ -924,19 +810,12 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
             increment_name_changes(uid)
         context.user_data['change_name_wait'] = False
         log_main(uid, "Смена имени", f"{old_name} → {name}")
-        reply = await msg.reply_text(
-            f"✅ ИМЯ ИЗМЕНЕНО!\n\n👤 {name}\n\n🔽 Что дальше?",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("✏️ ИЗМЕНИТЬ ЕЩЁ", callback_data='change_name')],
-                [InlineKeyboardButton("👤 В ПРОФИЛЬ", callback_data='profile')],
-                [InlineKeyboardButton("◀️ В ГЛАВНОЕ МЕНЮ", callback_data='back')],
-            ])
-        )
+        reply = await msg.reply_text(f"✅ ИМЯ ИЗМЕНЕНО!\n\n👤 {name}\n\n🔽 Что дальше?", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✏️ ИЗМЕНИТЬ ЕЩЁ", callback_data='change_name')], [InlineKeyboardButton("👤 В ПРОФИЛЬ", callback_data='profile')], [InlineKeyboardButton("◀️ В ГЛАВНОЕ МЕНЮ", callback_data='back')]]))
         add_user_message(uid, reply)
         await delete_user_messages(context.bot, uid, keep_last=1)
         return
     
-    # ===== ОСТАЛЬНЫЕ РЕЖИМЫ (сообщения, спам, приветствия, пост и т.д.) =====
+    # ===== ОСТАЛЬНЫЕ РЕЖИМЫ =====
     if context.user_data.get('send_message_wait'):
         target_id = context.user_data['send_message_target']
         anonymous = context.user_data.get('send_message_anonymous', False)
@@ -951,12 +830,7 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['send_message_target'] = None
         log_main(uid, "Отправил сообщение", f"{'Анонимно' if anonymous else 'Публично'} → {target_id}")
         if success:
-            add_notification(
-                target_id,
-                "💬 Новое сообщение",
-                f"Вам написали: {text[:100]}{'...' if len(text) > 100 else ''}",
-                f"view_msg_{target_id}"
-            )
+            add_notification(target_id, "💬 Новое сообщение", f"Вам написали: {text[:100]}{'...' if len(text) > 100 else ''}", f"view_msg_{target_id}")
         reply = await msg.reply_text(result, reply_markup=main_kb(uid))
         add_user_message(uid, reply)
         await delete_user_messages(context.bot, uid, keep_last=1)
@@ -980,10 +854,7 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
             set_welcome_text(channel_id, text)
             set_setting(f"welcome_enabled_{channel_id}", '1')
             context.user_data['welcome_edit_text_wait'] = None
-            reply = await msg.reply_text(
-                f"✅ ПРИВЕТСТВИЕ СОХРАНЕНО!\n\n📝 {text}",
-                reply_markup=welcome_commands_kb(channel_id)
-            )
+            reply = await msg.reply_text(f"✅ ПРИВЕТСТВИЕ СОХРАНЕНО!\n\n📝 {text}", reply_markup=welcome_commands_kb(channel_id))
             add_user_message(uid, reply)
         await delete_user_messages(context.bot, uid, keep_last=1)
         return
@@ -995,10 +866,7 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
             set_farewell_text(channel_id, text)
             set_setting(f"farewell_enabled_{channel_id}", '1')
             context.user_data['farewell_edit_text_wait'] = None
-            reply = await msg.reply_text(
-                f"✅ ПРОЩАНИЕ СОХРАНЕНО!\n\n📝 {text}",
-                reply_markup=farewell_commands_kb(channel_id)
-            )
+            reply = await msg.reply_text(f"✅ ПРОЩАНИЕ СОХРАНЕНО!\n\n📝 {text}", reply_markup=farewell_commands_kb(channel_id))
             add_user_message(uid, reply)
         await delete_user_messages(context.bot, uid, keep_last=1)
         return
@@ -1043,10 +911,7 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['post_wait'] = None
         context.user_data['post_channel_id'] = channel_id
         context.user_data['post_date_wait'] = True
-        reply = await msg.reply_text(
-            "📅 ВВЕДИТЕ ДАТУ (ДД.ММ.ГГГГ ЧЧ:ММ):\nПример: 31.12.2026 23:59",
-            reply_markup=back_kb(uid)
-        )
+        reply = await msg.reply_text("📅 ВВЕДИТЕ ДАТУ (ДД.ММ.ГГГГ ЧЧ:ММ):\nПример: 31.12.2026 23:59", reply_markup=back_kb(uid))
         add_user_message(uid, reply)
         await delete_user_messages(context.bot, uid, keep_last=1)
         return
@@ -1057,37 +922,391 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
             dt = datetime.strptime(f"{parts[0]} {parts[1] if len(parts) > 1 else '00:00'}", '%d.%m.%Y %H:%M')
             scheduled = dt.strftime('%Y-%m-%d %H:%M:%S')
             post_data = context.user_data.get('post_data', {})
-            add_scheduled_post(
-                context.user_data['post_channel_id'],
-                post_data.get('text', ''),
-                post_data.get('media'),
-                scheduled
-            )
+            channel_id = context.user_data['post_channel_id']
+            add_scheduled_post(channel_id, post_data.get('text', ''), post_data.get('media'), scheduled)
             context.user_data['post_date_wait'] = None
             context.user_data['post_data'] = None
             context.user_data['post_channel_id'] = None
-            reply = await msg.reply_text(
-                f"✅ ПОСТ ЗАПЛАНИРОВАН!\n\n📅 {dt.strftime('%d.%m.%Y %H:%M')}\n{'🖼 С медиа' if post_data.get('media') else '📝 Без медиа'}",
-                reply_markup=auto_posting_menu_kb(context.user_data.get('post_channel_id', 0))
-            )
+            reply = await msg.reply_text(f"✅ ПОСТ ЗАПЛАНИРОВАН!\n\n📅 {dt.strftime('%d.%m.%Y %H:%M')}\n{'🖼 С медиа' if post_data.get('media') else '📝 Без медиа'}", reply_markup=auto_posting_menu_kb(channel_id))
             add_user_message(uid, reply)
         except Exception as e:
-            reply = await msg.reply_text(
-                f"❌ НЕВЕРНЫЙ ФОРМАТ!\n\nПример: 31.12.2026 23:59\nОшибка: {str(e)}",
-                reply_markup=back_kb(uid)
-            )
+            reply = await msg.reply_text(f"❌ НЕВЕРНЫЙ ФОРМАТ!\n\nПример: 31.12.2026 23:59\nОшибка: {str(e)}", reply_markup=back_kb(uid))
             add_user_message(uid, reply)
         await delete_user_messages(context.bot, uid, keep_last=1)
         return
     
+    # ===== АКТИВАЦИЯ КОДА =====
+    if context.user_data.get('code_wait'):
+        code = msg.text.strip().upper()
+        promo = get_promo_code(code)
+        if not promo:
+            reply = await msg.reply_text("❌ НЕВЕРНЫЙ КОД!", reply_markup=back_kb(uid))
+        elif promo['uses'] >= promo['max_uses']:
+            reply = await msg.reply_text("❌ КОД ИСПОЛЬЗОВАН!", reply_markup=back_kb(uid))
+        else:
+            days = promo['subscription_days']
+            end_date = (datetime.now() + timedelta(days=days)).strftime('%Y-%m-%d')
+            set_subscription(uid, end_date)
+            use_promo_code(code)
+            reply = await msg.reply_text(f"✅ КОД АКТИВИРОВАН! ПОДПИСКА ДО {end_date}", reply_markup=main_kb(uid))
+        context.user_data['code_wait'] = False
+        add_user_message(uid, reply)
+        await delete_user_messages(context.bot, uid, keep_last=1)
+        return
+    
+    # ===== РАССЫЛКА =====
+    if context.user_data.get('broadcast_wait'):
+        text = msg.text or ""
+        media = None
+        if msg.photo:
+            media = msg.photo[-1].file_id
+        elif msg.video:
+            media = msg.video.file_id
+        elif msg.animation:
+            media = msg.animation.file_id
+        elif msg.document:
+            media = msg.document.file_id
+        users = get_all_users()
+        sent = 0
+        for u in users:
+            if is_user_blocked(u['user_id']):
+                continue
+            try:
+                if media:
+                    await context.bot.send_photo(chat_id=u['user_id'], photo=media, caption=text)
+                else:
+                    await context.bot.send_message(chat_id=u['user_id'], text=text)
+                sent += 1
+                await asyncio.sleep(0.05)
+            except:
+                pass
+        context.user_data['broadcast_wait'] = False
+        reply = await msg.reply_text(f"✅ РАССЫЛКА ЗАВЕРШЕНА! Отправлено {sent} пользователям.", reply_markup=dev_kb(uid))
+        add_user_message(uid, reply)
+        await delete_user_messages(context.bot, uid, keep_last=1)
+        return
+    
+    # ===== ПОДАРОК =====
+    if context.user_data.get('gift_wait'):
+        target_id = msg.text.strip()
+        if not target_id.isdigit():
+            reply = await msg.reply_text("❌ ВВЕДИТЕ ЧИСЛО (ID пользователя)!", reply_markup=back_kb(uid))
+            add_user_message(uid, reply)
+            await delete_user_messages(context.bot, uid, keep_last=1)
+            return
+        target_id = int(target_id)
+        if not get_user(target_id):
+            reply = await msg.reply_text("❌ ПОЛЬЗОВАТЕЛЬ НЕ НАЙДЕН!", reply_markup=back_kb(uid))
+            add_user_message(uid, reply)
+            await delete_user_messages(context.bot, uid, keep_last=1)
+            return
+        end_date = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+        set_subscription(target_id, end_date)
+        context.user_data['gift_wait'] = False
+        reply = await msg.reply_text(f"✅ ПОДПИСКА НА 30 ДНЕЙ ПОДАРЕНА ПОЛЬЗОВАТЕЛЮ {target_id}!", reply_markup=dev_kb(uid))
+        add_user_message(uid, reply)
+        await delete_user_messages(context.bot, uid, keep_last=1)
+        return
+    
+    # ===== КАСТОМИЗАЦИЯ =====
+    if context.user_data.get('custom_desc_wait'):
+        text = msg.text.strip()
+        if text:
+            set_setting("global_desc", text)
+            reply = await msg.reply_text("✅ ОПИСАНИЕ СОХРАНЕНО!", reply_markup=dev_kb(uid))
+        else:
+            reply = await msg.reply_text("❌ ТЕКСТ НЕ МОЖЕТ БЫТЬ ПУСТЫМ!", reply_markup=dev_kb(uid))
+        context.user_data['custom_desc_wait'] = False
+        add_user_message(uid, reply)
+        await delete_user_messages(context.bot, uid, keep_last=1)
+        return
+    
+    if context.user_data.get('custom_media_wait'):
+        media = None
+        if msg.photo:
+            media = msg.photo[-1].file_id
+        elif msg.video:
+            media = msg.video.file_id
+        elif msg.animation:
+            media = msg.animation.file_id
+        if media:
+            set_setting("global_media", media)
+            reply = await msg.reply_text("✅ МЕДИА СОХРАНЕНО!", reply_markup=dev_kb(uid))
+        else:
+            reply = await msg.reply_text("❌ ОТПРАВЬТЕ ФОТО, ВИДЕО ИЛИ GIF!", reply_markup=dev_kb(uid))
+        context.user_data['custom_media_wait'] = False
+        add_user_message(uid, reply)
+        await delete_user_messages(context.bot, uid, keep_last=1)
+        return
+    
+    # ===== РЕДАКТОР РЕГИСТРАЦИИ =====
+    if context.user_data.get('edit_reg_text_wait'):
+        text = msg.text.strip()
+        if text:
+            set_setting("reg_text", text)
+            reply = await msg.reply_text("✅ ТЕКСТ РЕГИСТРАЦИИ СОХРАНЕН!", reply_markup=registration_editor_kb())
+        else:
+            reply = await msg.reply_text("❌ ТЕКСТ НЕ МОЖЕТ БЫТЬ ПУСТЫМ!", reply_markup=registration_editor_kb())
+        context.user_data['edit_reg_text_wait'] = False
+        add_user_message(uid, reply)
+        await delete_user_messages(context.bot, uid, keep_last=1)
+        return
+    
+    if context.user_data.get('edit_reg_media_wait'):
+        media = None
+        if msg.photo:
+            media = msg.photo[-1].file_id
+        elif msg.video:
+            media = msg.video.file_id
+        elif msg.animation:
+            media = msg.animation.file_id
+        if media:
+            set_setting("reg_media", media)
+            reply = await msg.reply_text("✅ МЕДИА РЕГИСТРАЦИИ СОХРАНЕНО!", reply_markup=registration_editor_kb())
+        else:
+            reply = await msg.reply_text("❌ ОТПРАВЬТЕ ФОТО, ВИДЕО ИЛИ GIF!", reply_markup=registration_editor_kb())
+        context.user_data['edit_reg_media_wait'] = False
+        add_user_message(uid, reply)
+        await delete_user_messages(context.bot, uid, keep_last=1)
+        return
+    
+    # ===== ПОИСК КАНАЛОВ =====
+    if context.user_data.get('search_by_name_wait'):
+        query = msg.text.strip()
+        if not query:
+            reply = await msg.reply_text("❌ ВВЕДИТЕ НАЗВАНИЕ!", reply_markup=back_kb(uid))
+            add_user_message(uid, reply)
+            await delete_user_messages(context.bot, uid, keep_last=1)
+            return
+        all_channels = get_all_channels()
+        results = []
+        for ch in all_channels:
+            if query.lower() in ch['channel_name'].lower():
+                results.append(ch)
+        if not results:
+            reply = await msg.reply_text("❌ НЕ НАЙДЕНО!", reply_markup=back_kb(uid))
+        else:
+            text = f"🔍 РЕЗУЛЬТАТЫ ПОИСКА ({len(results)}):\n\n"
+            for ch in results[:20]:
+                owner_name = get_user_nickname(ch['owner_id']) or "Неизвестен"
+                try:
+                    chat = await context.bot.get_chat(ch['channel_id'])
+                    channel_link = f"https://t.me/{chat.username}" if hasattr(chat, 'username') and chat.username else "Нет ссылки"
+                except:
+                    channel_link = "Недоступно"
+                text += f"📺 {ch['channel_name']}\n   👤 {owner_name}\n   🆔 ТГ ID: {ch['channel_id']}\n   🔗 Ссылка: {channel_link}\n   📂 {ch['category'] if ch['category'] else 'Не указана'}\n   👥 {ch['subscribers'] if ch['subscribers'] else 0}\n\n"
+            reply = await msg.reply_text(text, reply_markup=back_kb(uid))
+        context.user_data['search_by_name_wait'] = False
+        add_user_message(uid, reply)
+        await delete_user_messages(context.bot, uid, keep_last=1)
+        return
+    
+    if context.user_data.get('search_by_bot_id_wait'):
+        query = msg.text.strip()
+        if not query.isdigit():
+            reply = await msg.reply_text("❌ ВВЕДИТЕ ЧИСЛО!", reply_markup=back_kb(uid))
+            add_user_message(uid, reply)
+            await delete_user_messages(context.bot, uid, keep_last=1)
+            return
+        channel = get_channel_by_channel_id(int(query))
+        if not channel:
+            reply = await msg.reply_text("❌ КАНАЛ НЕ НАЙДЕН!", reply_markup=back_kb(uid))
+        else:
+            owner_name = get_user_nickname(channel['owner_id']) or "Неизвестен"
+            try:
+                chat = await context.bot.get_chat(channel['channel_id'])
+                channel_link = f"https://t.me/{chat.username}" if hasattr(chat, 'username') and chat.username else "Нет ссылки"
+            except:
+                channel_link = "Недоступно"
+            text = f"📺 {channel['channel_name']}\n   👤 {owner_name}\n   🆔 ТГ ID: {channel['channel_id']}\n   🔗 Ссылка: {channel_link}\n   📂 {channel['category'] if channel['category'] else 'Не указана'}\n   👥 {channel['subscribers'] if channel['subscribers'] else 0}"
+            reply = await msg.reply_text(text, reply_markup=back_kb(uid))
+        context.user_data['search_by_bot_id_wait'] = False
+        add_user_message(uid, reply)
+        await delete_user_messages(context.bot, uid, keep_last=1)
+        return
+    
+    if context.user_data.get('search_by_tg_id_wait'):
+        query = msg.text.strip()
+        if not query.lstrip('-').isdigit():
+            reply = await msg.reply_text("❌ ВВЕДИТЕ ЧИСЛО (может начинаться с -)!", reply_markup=back_kb(uid))
+            add_user_message(uid, reply)
+            await delete_user_messages(context.bot, uid, keep_last=1)
+            return
+        channel = get_channel_by_channel_id(int(query))
+        if not channel:
+            reply = await msg.reply_text("❌ КАНАЛ НЕ НАЙДЕН!", reply_markup=back_kb(uid))
+        else:
+            owner_name = get_user_nickname(channel['owner_id']) or "Неизвестен"
+            try:
+                chat = await context.bot.get_chat(channel['channel_id'])
+                channel_link = f"https://t.me/{chat.username}" if hasattr(chat, 'username') and chat.username else "Нет ссылки"
+            except:
+                channel_link = "Недоступно"
+            text = f"📺 {channel['channel_name']}\n   👤 {owner_name}\n   🆔 ТГ ID: {channel['channel_id']}\n   🔗 Ссылка: {channel_link}\n   📂 {channel['category'] if channel['category'] else 'Не указана'}\n   👥 {channel['subscribers'] if channel['subscribers'] else 0}"
+            reply = await msg.reply_text(text, reply_markup=back_kb(uid))
+        context.user_data['search_by_tg_id_wait'] = False
+        add_user_message(uid, reply)
+        await delete_user_messages(context.bot, uid, keep_last=1)
+        return
+    
+    # ===== ПОИСК ЛЮДЕЙ =====
+    if context.user_data.get('search_users_wait'):
+        query = msg.text.strip()
+        all_users = get_all_users()
+        results = []
+        for u in all_users:
+            if is_user_blocked(u['user_id']):
+                continue
+            nickname = get_user_nickname(u['user_id']) or ""
+            if query.isdigit() and int(query) == u['user_id']:
+                results.append(u)
+            elif query.lower() in nickname.lower():
+                results.append(u)
+        if not results:
+            reply = await msg.reply_text("❌ НЕ НАЙДЕНО!", reply_markup=back_kb(uid))
+        else:
+            text = f"🔍 РЕЗУЛЬТАТЫ ПОИСКА ({len(results)}):\n\n"
+            for u in results[:20]:
+                nickname = get_user_nickname(u['user_id']) or "Не указан"
+                sub_end = get_subscription_end(u['user_id'])
+                sub_status = f"✅ ДО {sub_end}" if sub_end and is_subscribed(u['user_id']) else "❌ НЕТ"
+                text += f"👤 {nickname}\n   🆔 ID: {u['user_id']}\n   👤 Username: @{u['username'] if u['username'] else 'Не указан'}\n   💳 Подписка: {sub_status}\n\n"
+            reply = await msg.reply_text(text, reply_markup=back_kb(uid))
+        context.user_data['search_users_wait'] = False
+        add_user_message(uid, reply)
+        await delete_user_messages(context.bot, uid, keep_last=1)
+        return
+    
+    # ===== ТАЙМЕР ВП (СВОЁ) =====
+    if context.user_data.get('vp_timer_custom_wait'):
+        try:
+            hours = float(msg.text.strip().replace(',', '.'))
+            if hours <= 0:
+                raise ValueError
+            set_vp_timer(int(hours))
+            reply = await msg.reply_text(f"✅ ТАЙМЕР УСТАНОВЛЕН НА {int(hours)} ЧАСОВ!", reply_markup=dev_kb(uid))
+        except:
+            reply = await msg.reply_text("❌ ВВЕДИТЕ ПОЛОЖИТЕЛЬНОЕ ЧИСЛО (например, 0.5, 1, 24)!", reply_markup=back_kb(uid))
+        context.user_data['vp_timer_custom_wait'] = False
+        add_user_message(uid, reply)
+        await delete_user_messages(context.bot, uid, keep_last=1)
+        return
+    
+    # ===== ПРИВЯЗКА КАНАЛА =====
+    if context.user_data.get('connect_wait'):
+        channel_id = extract_channel_id_from_text(msg.text)
+        if channel_id is None:
+            reply = await msg.reply_text("❌ НЕВЕРНЫЙ ID! Введите ID канала (-100...)", reply_markup=back_kb(uid))
+            add_user_message(uid, reply)
+            await delete_user_messages(context.bot, uid, keep_last=1)
+            return
+        try:
+            chat = await context.bot.get_chat(channel_id)
+            if chat.type not in ['channel', 'supergroup']:
+                reply = await msg.reply_text("❌ ЭТО НЕ КАНАЛ!", reply_markup=back_kb(uid))
+                add_user_message(uid, reply)
+                await delete_user_messages(context.bot, uid, keep_last=1)
+                return
+            context.user_data['connect_channel_id'] = channel_id
+            context.user_data['connect_channel_name'] = chat.title
+            context.user_data['connect_wait'] = False
+            context.user_data['selected_categories'] = []
+            # Перенаправляем в меню выбора категорий (через edit_current вызовем позже)
+            # Здесь не можем вызвать edit_current, поэтому отправляем новое сообщение с клавиатурой
+            reply = await msg.reply_text("📂 ВЫБЕРИТЕ ДО 2 КАТЕГОРИЙ:", reply_markup=categories_kb(uid, []))
+            add_user_message(uid, reply)
+            await delete_user_messages(context.bot, uid, keep_last=1)
+            return
+        except Exception as e:
+            reply = await msg.reply_text(f"❌ ОШИБКА: {e}", reply_markup=back_kb(uid))
+            add_user_message(uid, reply)
+            await delete_user_messages(context.bot, uid, keep_last=1)
+            return
+    
+    if context.user_data.get('connect_by_link'):
+        username = extract_username_from_link(msg.text)
+        if not username:
+            reply = await msg.reply_text("❌ НЕВЕРНАЯ ССЫЛКА! Пример: https://t.me/username", reply_markup=back_kb(uid))
+            add_user_message(uid, reply)
+            await delete_user_messages(context.bot, uid, keep_last=1)
+            return
+        try:
+            chat = await context.bot.get_chat(f"@{username}")
+            if chat.type not in ['channel', 'supergroup']:
+                reply = await msg.reply_text("❌ ЭТО НЕ КАНАЛ!", reply_markup=back_kb(uid))
+                add_user_message(uid, reply)
+                await delete_user_messages(context.bot, uid, keep_last=1)
+                return
+            context.user_data['connect_channel_id'] = chat.id
+            context.user_data['connect_channel_name'] = chat.title
+            context.user_data['connect_by_link'] = False
+            context.user_data['selected_categories'] = []
+            reply = await msg.reply_text("📂 ВЫБЕРИТЕ ДО 2 КАТЕГОРИЙ:", reply_markup=categories_kb(uid, []))
+            add_user_message(uid, reply)
+            await delete_user_messages(context.bot, uid, keep_last=1)
+            return
+        except Exception as e:
+            reply = await msg.reply_text(f"❌ ОШИБКА: {e}", reply_markup=back_kb(uid))
+            add_user_message(uid, reply)
+            await delete_user_messages(context.bot, uid, keep_last=1)
+            return
+    
+    if context.user_data.get('connect_by_username'):
+        username = msg.text.strip().lstrip('@')
+        if not username:
+            reply = await msg.reply_text("❌ ВВЕДИТЕ USERNAME (без @)!", reply_markup=back_kb(uid))
+            add_user_message(uid, reply)
+            await delete_user_messages(context.bot, uid, keep_last=1)
+            return
+        try:
+            chat = await context.bot.get_chat(f"@{username}")
+            if chat.type not in ['channel', 'supergroup']:
+                reply = await msg.reply_text("❌ ЭТО НЕ КАНАЛ!", reply_markup=back_kb(uid))
+                add_user_message(uid, reply)
+                await delete_user_messages(context.bot, uid, keep_last=1)
+                return
+            context.user_data['connect_channel_id'] = chat.id
+            context.user_data['connect_channel_name'] = chat.title
+            context.user_data['connect_by_username'] = False
+            context.user_data['selected_categories'] = []
+            reply = await msg.reply_text("📂 ВЫБЕРИТЕ ДО 2 КАТЕГОРИЙ:", reply_markup=categories_kb(uid, []))
+            add_user_message(uid, reply)
+            await delete_user_messages(context.bot, uid, keep_last=1)
+            return
+        except Exception as e:
+            reply = await msg.reply_text(f"❌ ОШИБКА: {e}", reply_markup=back_kb(uid))
+            add_user_message(uid, reply)
+            await delete_user_messages(context.bot, uid, keep_last=1)
+            return
+    
+    if context.user_data.get('connect_by_forward_wait'):
+        if msg.forward_from_chat:
+            chat = msg.forward_from_chat
+            if chat.type not in ['channel', 'supergroup']:
+                reply = await msg.reply_text("❌ ЭТО НЕ КАНАЛ!", reply_markup=back_kb(uid))
+                add_user_message(uid, reply)
+                await delete_user_messages(context.bot, uid, keep_last=1)
+                return
+            context.user_data['connect_channel_id'] = chat.id
+            context.user_data['connect_channel_name'] = chat.title
+            context.user_data['connect_by_forward_wait'] = False
+            context.user_data['selected_categories'] = []
+            reply = await msg.reply_text("📂 ВЫБЕРИТЕ ДО 2 КАТЕГОРИЙ:", reply_markup=categories_kb(uid, []))
+            add_user_message(uid, reply)
+            await delete_user_messages(context.bot, uid, keep_last=1)
+            return
+        else:
+            reply = await msg.reply_text("❌ ПЕРЕСЫЛАЙТЕ СООБЩЕНИЕ ИЗ КАНАЛА!", reply_markup=back_kb(uid))
+            add_user_message(uid, reply)
+            await delete_user_messages(context.bot, uid, keep_last=1)
+            return
+    
+    # ===== СОЗДАНИЕ КОДА (остальное) =====
     if context.user_data.get('code_create_name'):
         context.user_data['code_name'] = msg.text.strip()
         context.user_data['code_create_name'] = False
         context.user_data['code_create_uses'] = True
-        reply = await msg.reply_text(
-            f"📝 Название: {context.user_data['code_name']}\n\n🔢 Введите количество использований:",
-            reply_markup=back_kb(uid)
-        )
+        reply = await msg.reply_text(f"📝 Название: {context.user_data['code_name']}\n\n🔢 Введите количество использований:", reply_markup=back_kb(uid))
         add_user_message(uid, reply)
         await delete_user_messages(context.bot, uid, keep_last=1)
         return
@@ -1100,10 +1319,7 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data['code_create_uses'] = False
             context.user_data['code_create_uses_count'] = uses
             context.user_data['code_create_days_wait'] = True
-            reply = await msg.reply_text(
-                f"📝 Название: {context.user_data['code_name']}\n🔢 Использований: {uses}\n\n📅 Выберите срок действия:",
-                reply_markup=code_days_kb(uid)
-            )
+            reply = await msg.reply_text(f"📝 Название: {context.user_data['code_name']}\n🔢 Использований: {uses}\n\n📅 Выберите срок действия:", reply_markup=code_days_kb(uid))
             add_user_message(uid, reply)
         except:
             reply = await msg.reply_text("❌ Введите число больше 0!", reply_markup=back_kb(uid))
@@ -1111,6 +1327,7 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await delete_user_messages(context.bot, uid, keep_last=1)
         return
     
+    # ===== ВП =====
     if context.user_data.get('vp_wait_channel'):
         try:
             chat_id = extract_channel_id_from_text(msg.text)
@@ -1187,6 +1404,7 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await delete_user_messages(context.bot, uid, keep_last=1)
         return
     
+    # ===== ПОИСК РАЗРАБОТЧИКА =====
     if context.user_data.get('dev_search_type'):
         search_type = context.user_data['dev_search_type']
         query = msg.text.strip()
@@ -1219,13 +1437,7 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 sub_status = f"✅ ДО {sub_end}" if sub_end and is_subscribed(u['user_id']) else "❌ НЕТ"
                 is_blocked = "🔒 ДА" if is_user_blocked(u['user_id']) else "❌ НЕТ"
                 channels = get_user_channels(u['user_id'])
-                text += (
-                    f"👤 {nickname}\n"
-                    f"   🆔 ID: {u['user_id']}\n"
-                    f"   👤 Username: @{u['username'] if u['username'] else 'Не указан'}\n"
-                    f"   💳 Подписка: {sub_status}\n"
-                    f"   🔒 Заблокирован: {is_blocked}\n"
-                )
+                text += f"👤 {nickname}\n   🆔 ID: {u['user_id']}\n   👤 Username: @{u['username'] if u['username'] else 'Не указан'}\n   💳 Подписка: {sub_status}\n   🔒 Заблокирован: {is_blocked}\n"
                 if channels:
                     text += f"   📺 Каналов: {len(channels)}\n"
                     for ch in channels[:3]:
@@ -1250,9 +1462,8 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await delete_user_messages(context.bot, uid, keep_last=1)
 
 # ============================================
-#  АНТИ-СПАМ / ФИЛЬТР СЛОВ
+#  АНТИ-СПАМ, ПРИВЕТСТВИЯ, ПРОЩАНИЕ, ЗАПРОСЫ
 # ============================================
-
 async def check_spam(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
@@ -1268,19 +1479,14 @@ async def check_spam(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not words:
         return
     text = update.message.text.lower()
-    message_text = update.message.text
     for word in words:
         if word.lower() in text:
             try:
                 await update.message.delete()
                 user_name = update.message.from_user.first_name or "Пользователь"
                 user_mention = f"@{update.message.from_user.username}" if update.message.from_user.username else user_name
-                await context.bot.send_message(
-                    chat_id=user_id,
-                    text=f"🚫 ВАШЕ СООБЩЕНИЕ УДАЛЕНО!\n\n📌 Причина: Запрещённое слово '{word}'\n👤 {user_mention}\n🆔 ID: {user_id}\n\n⚠️ Повторные нарушения приведут к блокировке!"
-                )
+                await context.bot.send_message(chat_id=user_id, text=f"🚫 ВАШЕ СООБЩЕНИЕ УДАЛЕНО!\n\n📌 Причина: Запрещённое слово '{word}'\n👤 {user_mention}\n🆔 ID: {user_id}\n\n⚠️ Повторные нарушения приведут к блокировке!")
                 log_main(user_id, "Фильтр слов", f"Удалено сообщение с словом '{word}' в группе {chat_id}")
-                log_main(user_id, "Текст", message_text[:100])
                 break
             except Exception as e:
                 log_error(f"Anti-spam error: {e}")
@@ -1301,11 +1507,7 @@ async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE)
         chat_title = update.message.chat.title or "Канал"
         mention = f"@{member.username}" if member.username else name
         count = get_channel_subscribers(context.bot, chat_id)
-        text = (welcome_text
-                .replace("{name}", name)
-                .replace("{chat}", chat_title)
-                .replace("{mention}", mention)
-                .replace("{count}", str(count)))
+        text = welcome_text.replace("{name}", name).replace("{chat}", chat_title).replace("{mention}", mention).replace("{count}", str(count))
         try:
             await update.message.reply_text(text)
         except Exception as e:
@@ -1327,11 +1529,7 @@ async def farewell_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_title = update.message.chat.title or "Канал"
     mention = f"@{member.username}" if member.username else name
     count = get_channel_subscribers(context.bot, chat_id)
-    text = (farewell_text
-            .replace("{name}", name)
-            .replace("{chat}", chat_title)
-            .replace("{mention}", mention)
-            .replace("{count}", str(count)))
+    text = farewell_text.replace("{name}", name).replace("{chat}", chat_title).replace("{mention}", mention).replace("{count}", str(count))
     try:
         await update.message.reply_text(text)
     except Exception as e:
@@ -1341,7 +1539,6 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
     try:
         chat_id = update.chat_join_request.chat.id
         user_id = update.chat_join_request.from_user.id
-        
         if is_user_blocked(user_id):
             try:
                 await context.bot.decline_chat_join_request(chat_id=chat_id, user_id=user_id)
@@ -1349,16 +1546,12 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
                 return
             except:
                 pass
-        
         if get_auto_approve(chat_id):
             try:
                 await context.bot.approve_chat_join_request(chat_id=chat_id, user_id=user_id)
                 log_main(user_id, "Автоприём", f"Заявка одобрена в канал {chat_id}")
                 try:
-                    await context.bot.send_message(
-                        chat_id=user_id,
-                        text=f"✅ ВАША ЗАЯВКА ОДОБРЕНА!\n\n📺 Канал: {update.chat_join_request.chat.title}\n🎉 Добро пожаловать!"
-                    )
+                    await context.bot.send_message(chat_id=user_id, text=f"✅ ВАША ЗАЯВКА ОДОБРЕНА!\n\n📺 Канал: {update.chat_join_request.chat.title}\n🎉 Добро пожаловать!")
                 except:
                     pass
             except Exception as e:
@@ -1371,75 +1564,37 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
         log_error(f"Join request handler error: {e}")
 
 # ============================================
-#  ОБРАБОТЧИК ПЛАТЕЖЕЙ (YooKassa)
+#  ОБРАБОТЧИК ПЛАТЕЖЕЙ (ЗВЁЗДЫ)
 # ============================================
-
 async def pre_checkout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.pre_checkout_query
-    user_id = query.from_user.id
-    
     payload = query.invoice_payload
-    if not payload.startswith('pay_'):
+    if not payload.startswith('stars_'):
         await query.answer(ok=False, error_message="❌ Неверный запрос.")
         return
-    
-    # Проверяем, существует ли платёж в истории
-    history = get_payment_history(user_id, limit=1)
-    if not history or history[0]['payment_id'] != payload:
-        await query.answer(ok=False, error_message="❌ Платёж не найден.")
-        return
-    
     await query.answer(ok=True)
 
 async def successful_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     user_id = message.from_user.id
-    payment_info = message.successful_payment
-    
-    payload = payment_info.invoice_payload
-    amount = payment_info.total_amount / 100
-    
-    # Определяем план
-    history = get_payment_history(user_id, limit=5)
-    plan_type = 'month'
-    for h in history:
-        if h['payment_id'] == payload:
-            plan_type = h['plan_type']
-            break
-    
+    payment = message.successful_payment
+    payload = payment.invoice_payload
+    stars = payment.total_amount
+    parts = payload.split('_')
+    plan_type = parts[1] if len(parts) >= 2 else 'month'
     days = SUBSCRIPTION_DAYS.get(plan_type, 30)
     end_date = (datetime.now() + timedelta(days=days)).strftime('%Y-%m-%d')
     set_subscription(user_id, end_date)
-    
-    add_payment_history(user_id, int(amount), 'success', payload, plan_type)
-    
-    log_main(user_id, "Оплата", f"{plan_type} на {days} дней, {amount} руб")
-    
-    await message.reply_text(
-        f"✅ ОПЛАТА ПОДТВЕРЖДЕНА!\n\n"
-        f"💳 Сумма: {amount} руб\n"
-        f"📅 Подписка активна до {end_date}\n\n"
-        f"🔁 ВКЛЮЧИТЬ АВТОПРОДЛЕНИЕ?\n"
-        f"Автопродление будет списывать {PRICES['month']} руб каждый месяц за 1 день до окончания подписки.",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("✅ ДА, ВКЛЮЧИТЬ", callback_data='enable_auto_renew')],
-            [InlineKeyboardButton("❌ НЕТ, НЕ НАДО", callback_data='disable_auto_renew')]
-        ])
-    )
-    
-    await context.bot.send_message(
-        chat_id=OWNER_ID,
-        text=f"💰 НОВАЯ ОПЛАТА!\n\n"
-        f"👤 Пользователь: {get_user_nickname(user_id) or user_id}\n"
-        f"📅 План: {plan_type}\n"
-        f"💳 Сумма: {amount} руб\n"
-        f"📅 Подписка до: {end_date}"
-    )
+    add_payment_history(user_id, stars, 'success', payload, plan_type)
+    await message.reply_text(f"✅ ОПЛАТА ПОДТВЕРЖДЕНА!\n\n⭐ Сумма: {stars} звёзд\n📅 Подписка активна до {end_date}\n\n🔁 ВКЛЮЧИТЬ АВТОПРОДЛЕНИЕ?\nАвтопродление будет списывать {PRICE_MONTH} ⭐ каждый месяц за 1 день до окончания.", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ ДА, ВКЛЮЧИТЬ", callback_data='enable_auto_renew')], [InlineKeyboardButton("❌ НЕТ, НЕ НАДО", callback_data='disable_auto_renew')]]))
+    await context.bot.send_message(chat_id=OWNER_ID, text=f"💰 НОВАЯ ОПЛАТА ЗВЁЗДАМИ!\n\n👤 Пользователь: {get_user_nickname(user_id) or user_id}\n📅 План: {plan_type}\n⭐ {stars} звёзд\n📅 Подписка до {end_date}")
 
+# ============================================
+#  CALLBACK (часть будет в следующем блоке)
+# ============================================
 # ============================================
 #  ОБРАБОТЧИК КНОПОК (CALLBACK)
 # ============================================
-
 async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global BOT_STOPPED, BOT_VERSION
     if not update.effective_user:
@@ -1497,12 +1652,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 channel = ch
                 break
         channel_name = channel['channel_name'] if channel else "Канал удален"
-        caption = (
-            f"📢 ВП (ВЗАИМОПОСТ)\n\n"
-            f"📺 Канал: {channel_name}\n"
-            f"👤 Владелец: {owner_name}\n"
-            f"📂 Категория: {category if category else 'Без категории'}\n"
-        )
+        caption = f"📢 ВП (ВЗАИМОПОСТ)\n\n📺 Канал: {channel_name}\n👤 Владелец: {owner_name}\n📂 Категория: {category if category else 'Без категории'}\n"
         if is_adult:
             caption += f"🔞 18+\n"
         caption += f"🕐 {created_at}\n\n📝 {text}\n\n"
@@ -1573,69 +1723,24 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # ===== ПОДПИСКА =====
     if data == 'subscription':
-        await edit_current("💳 ВЫБЕРИТЕ ТАРИФ:", subscription_kb(uid))
+        await edit_current("💳 ВЫБЕРИТЕ ТАРИФ (оплата звёздами):", subscription_kb(uid))
         return
     
     if data.startswith('sub_'):
         plan_type = data.replace('sub_', '')
-        amount = PRICES.get(plan_type)
-        if not amount:
+        stars = PRICES.get(plan_type)
+        if not stars:
             await edit_current("❌ НЕВЕРНЫЙ ТАРИФ!", back_kb(uid))
             return
-        
-        payment_method = get_payment_method(uid)
-        
-        if not PROVIDER_TOKEN:
-            await edit_current("❌ ПЛАТЁЖНАЯ СИСТЕМА НЕ НАСТРОЕНА!\n\nОбратитесь к разработчику.", back_kb(uid))
-            return
-        
-        if not payment_method:
-            await edit_current(
-                f"💳 ОПЛАТА\n\n📅 Тариф: {PLAN_NAMES[plan_type]}\n💰 Сумма: {amount} руб\n\nДля оплаты нажмите кнопку ниже. Telegram попросит вас ввести данные карты.\n🔒 Данные карты защищены и не хранятся у нас.",
-                InlineKeyboardMarkup([
-                    [InlineKeyboardButton(f"💳 ОПЛАТИТЬ {amount} руб", callback_data=f'pay_{plan_type}')],
-                    [InlineKeyboardButton("◀️ НАЗАД", callback_data='subscription')]
-                ])
-            )
-        else:
-            await edit_current(
-                f"💳 ОПЛАТА\n\n📅 Тариф: {PLAN_NAMES[plan_type]}\n💰 Сумма: {amount} руб\n💳 Карта: **** {payment_method['last4']}\n\nНажмите 'ОПЛАТИТЬ' для списания средств.",
-                InlineKeyboardMarkup([
-                    [InlineKeyboardButton(f"💳 ОПЛАТИТЬ {amount} руб", callback_data=f'pay_{plan_type}')],
-                    [InlineKeyboardButton("🔄 СМЕНИТЬ КАРТУ", callback_data='change_card')],
-                    [InlineKeyboardButton("◀️ НАЗАД", callback_data='subscription')]
-                ])
-            )
-        return
-    
-    if data.startswith('pay_'):
-        plan_type = data.replace('pay_', '')
-        amount = PRICES.get(plan_type)
-        if not amount:
-            await edit_current("❌ НЕВЕРНЫЙ ТАРИФ!", back_kb(uid))
-            return
-        
         days = SUBSCRIPTION_DAYS.get(plan_type, 30)
-        
-        if not PROVIDER_TOKEN:
-            await edit_current("❌ ПЛАТЁЖНАЯ СИСТЕМА НЕ НАСТРОЕНА!", back_kb(uid))
-            return
-        
-        import time
-        import random
-        payload = f"pay_{uid}_{int(time.time())}_{random.randint(1000, 9999)}"
-        
-        add_payment_history(uid, amount, 'pending', payload, plan_type)
-        
         try:
             await context.bot.send_invoice(
                 chat_id=uid,
                 title=f"Подписка {PLAN_NAMES[plan_type]}",
                 description=f"Доступ к боту на {days} дней",
-                payload=payload,
-                provider_token=PROVIDER_TOKEN,
-                currency="RUB",
-                prices=[{"label": PLAN_NAMES[plan_type], "amount": amount * 100}],
+                payload=f"stars_{plan_type}_{uid}_{int(time.time())}",
+                currency="XTR",
+                prices=[{"label": PLAN_NAMES[plan_type], "amount": stars}],
                 start_parameter="subscription",
                 need_name=False,
                 need_phone_number=False,
@@ -1646,11 +1751,6 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             log_error(f"Invoice error: {e}")
             await edit_current(f"❌ ОШИБКА СОЗДАНИЯ ПЛАТЕЖА!\n\n{str(e)}", back_kb(uid))
-        return
-    
-    if data == 'change_card':
-        delete_payment_method(uid)
-        await edit_current("💳 СТАРАЯ КАРТА УДАЛЕНА!\n\nПри следующей оплате вы сможете привязать новую карту.", back_kb(uid))
         return
     
     if data == 'activate_code':
@@ -1693,29 +1793,16 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             notifs = get_user_notifications(uid, unread_only=True)
             notif_count = len(notifs)
             notif_text = f"📬 {notif_count} новых" if notif_count > 0 else "📭 Пусто"
-            text = (
-                f"👤 ПРОФИЛЬ\n\n"
-                f"👤 Никнейм: {nickname}\n"
-                f"🆔 ID в боте: {uid}\n"
-                f"🆔 ID в Telegram: {uid}\n"
-                f"📝 Смена имени: {name_changes_text}\n"
-                f"🔞 Возраст: {adult_status}\n"
-                f"🔒 Заблокирован: {is_blocked_user}\n"
-                f"💰 ПОДПИСКА: {sub_status}\n"
-                f"{notif_text}\n"
-                f"📺 КАНАЛЫ:{channels_text}"
-            )
+            text = f"👤 ПРОФИЛЬ\n\n👤 Никнейм: {nickname}\n🆔 ID в боте: {uid}\n🆔 ID в Telegram: {uid}\n📝 Смена имени: {name_changes_text}\n🔞 Возраст: {adult_status}\n🔒 Заблокирован: {is_blocked_user}\n💰 ПОДПИСКА: {sub_status}\n{notif_text}\n📺 КАНАЛЫ:{channels_text}"
             await edit_current(text, profile_kb(uid))
         except Exception as e:
             import traceback
             error_trace = traceback.format_exc()
             log_error(f"Ошибка в профиле для {uid}: {e}\n{error_trace}")
-            await edit_current(
-                f"❌ ОШИБКА ПРИ ЗАГРУЗКЕ ПРОФИЛЯ!\n\nКод ошибки: {str(e)[:100]}\n\nСообщите разработчику.",
-                back_kb(uid)
-            )
+            await edit_current(f"❌ ОШИБКА ПРИ ЗАГРУЗКЕ ПРОФИЛЯ!\n\nКод ошибки: {str(e)[:100]}\n\nСообщите разработчику.", back_kb(uid))
         return
     
+    # ===== ИЗМЕНЕНИЕ ИМЕНИ =====
     if data == 'change_name':
         try:
             if uid == OWNER_ID:
@@ -1787,7 +1874,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await edit_current("❌ АВТОПРОДЛЕНИЕ ОТКЛЮЧЕНО.", main_kb(uid))
         return
 
-    # ===== УВЕДОМЛЕНИЯ (ПОЧТА) =====
+    # ===== УВЕДОМЛЕНИЯ =====
     if data == 'show_notifications':
         try:
             notifs = get_user_notifications(uid, unread_only=True)
@@ -1850,12 +1937,8 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             log_error(f"Ошибка clear_notifications для {uid}: {e}")
             await edit_current("❌ ОШИБКА!", back_kb(uid))
         return
-    
-    if data.startswith('hide_notif_'):
-        await edit_current("✅ УВЕДОМЛЕНИЕ СКРЫТО!", main_kb(uid))
-        return
-    
-    # ===== СООБЩЕНИЯ ПОЛЬЗОВАТЕЛЯМ =====
+
+    # ===== ОТПРАВКА СООБЩЕНИЙ =====
     if data == 'send_message_to_user':
         if not is_registered(uid):
             await edit_current("❌ СНАЧАЛА ЗАРЕГИСТРИРУЙТЕСЬ!", back_kb(uid))
@@ -1898,7 +1981,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         sub_status = f"АКТИВНА ДО {sub_end}" if sub_end and is_subscribed(target_id) else "НЕТУ"
         await edit_current(f"👤 ПРОФИЛЬ\n\n👤 {nickname}\n🆔 ID в боте: {target_id}\n🆔 ID в Telegram: {target_id}\n💰 {sub_status}", user_profile_kb(uid, target_id))
         return
-    
+
     # ===== ПРИВЯЗКА КАНАЛА =====
     if data == 'connect_channel':
         if not is_subscribed(uid):
@@ -1939,6 +2022,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await edit_current("📩 ПЕРЕСЛАТЬ СООБЩЕНИЕ\n\n1. Найдите любое сообщение в канале\n2. Перешлите его сюда\n3. Бот сам определит канал\n\n⚠️ Бот должен быть администратором канала!", back_kb(uid))
         return
     
+    # ===== КАТЕГОРИИ ПРИ ПРИВЯЗКЕ =====
     if data.startswith('cat_'):
         cat = data.replace('cat_', '')
         if 'selected_categories' not in context.user_data:
@@ -1978,12 +2062,17 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if hasattr(chat_info, 'linked_chat_id') and chat_info.linked_chat_id:
                     linked_group_id = chat_info.linked_chat_id
                     set_channel_linked_group(channel_id, linked_group_id)
+                    # Пытаемся автоматически вступить в группу
+                    try:
+                        await context.bot.join_chat(linked_group_id)
+                    except Exception as e:
+                        log_error(f"Auto join group error: {e}")
             except:
                 pass
             context.user_data['selected_categories'] = []
             context.user_data['connect_channel_id'] = None
             context.user_data['connect_channel_name'] = None
-            group_text = f"\n💬 Группа: {'✅ Найдена' if linked_group_id else '❌ Не найдена'}"
+            group_text = f"\n💬 Группа: {'✅ Найдена и бот вступил' if linked_group_id else '❌ Не найдена'}"
             await edit_current(f"✅ КАНАЛ ПРИВЯЗАН!\n\n📺 {chat_name}\n📂 Категории: {categories_str}\n🔒 {privacy}\n👥 {subscribers}{group_text}\n\n🔽 Что дальше?", InlineKeyboardMarkup([[InlineKeyboardButton("🔗 ПРИВЯЗАТЬ ЕЩЁ", callback_data='connect_channel')], [InlineKeyboardButton("⚙️ НАСТРОЙКИ", callback_data=f"set_ch_{channel_id}")], [InlineKeyboardButton("◀️ В ГЛАВНОЕ МЕНЮ", callback_data='back')]]))
         else:
             await edit_current("❌ ОШИБКА! Канал не найден.", back_kb(uid))
@@ -2004,7 +2093,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         del_channel_db(channel_id, uid)
         await edit_current("✅ ОТВЯЗАН!", back_kb(uid))
         return
-    
+
     # ===== НАСТРОЙКИ КАНАЛА =====
     if data == 'channel_settings':
         if not is_subscribed(uid):
@@ -2035,20 +2124,16 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not ch:
             await edit_current("❌ КАНАЛ НЕ НАЙДЕН!", back_kb(uid))
             return
-        
         info = get_channel_info_full(context.bot, channel_id)
         if not info:
             await edit_current("❌ НЕ УДАЛОСЬ ПОЛУЧИТЬ ИНФОРМАЦИЮ!", back_kb(uid))
             return
-        
         update_channel_subscribers(context.bot, channel_id)
         ch = get_channel_by_channel_id(channel_id)
-        
         privacy = ch['privacy'] if ch['privacy'] else 'public'
         privacy_text = "🔒 СКРЫТ" if privacy == 'private' else "🔓 ВИДЕН"
         linked_group = get_channel_linked_group(channel_id)
         group_text = f"✅ {linked_group}" if linked_group else "❌ Не найдена"
-        
         admins_text = ""
         if info['admins']:
             for admin in info['admins'][:5]:
@@ -2057,36 +2142,18 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 admins_text += f"   ... и еще {len(info['admins']) - 5}"
         else:
             admins_text = "   ❌ Нет данных"
-        
-        text = (
-            f"ℹ️ ИНФОРМАЦИЯ О КАНАЛЕ\n\n"
-            f"📺 Название: {info['title']}\n"
-            f"🆔 ТГ ID: {info['id']}\n"
-            f"🔗 Username: @{info['username'] if info['username'] else 'Нет'}\n"
-            f"📝 Описание: {info['description'] if info['description'] else 'Не указано'}\n"
-            f"👥 Подписчиков: {info['member_count']}\n"
-            f"🔒 Видимость: {privacy_text}\n"
-            f"💬 Группа: {group_text}\n"
-            f"📂 Категория: {ch['category'] if ch['category'] else 'Не указана'}\n"
-            f"👑 Владелец: {get_user_nickname(ch['owner_id']) or ch['owner_id']}\n"
-            f"👥 Администраторы:\n{admins_text}\n"
-        )
-        
+        text = f"ℹ️ ИНФОРМАЦИЯ О КАНАЛЕ\n\n📺 Название: {info['title']}\n🆔 ТГ ID: {info['id']}\n🔗 Username: @{info['username'] if info['username'] else 'Нет'}\n📝 Описание: {info['description'] if info['description'] else 'Не указано'}\n👥 Подписчиков: {info['member_count']}\n🔒 Видимость: {privacy_text}\n💬 Группа: {group_text}\n📂 Категория: {ch['category'] if ch['category'] else 'Не указана'}\n👑 Владелец: {get_user_nickname(ch['owner_id']) or ch['owner_id']}\n👥 Администраторы:\n{admins_text}\n"
         kb = [[InlineKeyboardButton("🔄 ОБНОВИТЬ", callback_data=f"channel_info_{channel_id}")], [InlineKeyboardButton("◀️ НАЗАД", callback_data=f"set_ch_{channel_id}")]]
-        
         if info['photo']:
             try:
                 await query.edit_message_media(media=InputMediaPhoto(media=info['photo'], caption=text), reply_markup=InlineKeyboardMarkup(kb))
                 return
             except:
                 pass
-        
         await edit_current(text, InlineKeyboardMarkup(kb))
         return
-    
-    # ===== ОСТАЛЬНЫЕ ОБРАБОТЧИКИ =====
-    
-    # Приветствие
+
+    # ===== ПРИВЕТСТВИЕ =====
     if data.startswith('set_welcome_'):
         channel_id = int(data.replace('set_welcome_', ''))
         current = get_welcome_text(channel_id) or "Привет, {name}!"
@@ -2160,8 +2227,8 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         set_setting(f"welcome_enabled_{channel_id}", '0')
         await edit_current(f"❌ ПРИВЕТСТВИЕ ВЫКЛЮЧЕНО!", channel_settings_kb(uid, channel_id))
         return
-    
-    # Прощание
+
+    # ===== ПРОЩАНИЕ =====
     if data.startswith('set_farewell_'):
         channel_id = int(data.replace('set_farewell_', ''))
         current = get_farewell_text(channel_id) or "Пока, {name}!"
@@ -2235,7 +2302,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         set_setting(f"farewell_enabled_{channel_id}", '0')
         await edit_current(f"❌ ПРОЩАНИЕ ВЫКЛЮЧЕНО!", channel_settings_kb(uid, channel_id))
         return
-    
+
     # ===== ФИЛЬТР СЛОВ =====
     if data.startswith('toggle_anti_spam_'):
         channel_id = int(data.replace('toggle_anti_spam_', ''))
@@ -2272,7 +2339,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         del_blacklist_word(channel_id, word)
         await edit_current(f"✅ '{word}' УДАЛЕНО!", back_kb(uid))
         return
-    
+
     # ===== АВТОПОСТИНГ =====
     if data.startswith('auto_posting_menu_'):
         channel_id = int(data.replace('auto_posting_menu_', ''))
@@ -2320,7 +2387,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         del_scheduled_post(post_id)
         await edit_current("✅ ПОСТ ОТМЕНЕН!", back_kb(uid))
         return
-    
+
     # ===== АВТОПРИЁМ =====
     if data.startswith('set_auto_approve_'):
         channel_id = int(data.replace('set_auto_approve_', ''))
@@ -2330,7 +2397,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         status = "✅ ВКЛ" if new_val else "❌ ВЫКЛ"
         await edit_current(f"🔗 АВТОПРИЁМ ЗАЯВОК: {status}\n\n{'Все заявки будут одобряться автоматически.' if new_val else 'Заявки будут ожидать ручного одобрения.'}", channel_settings_kb(uid, channel_id))
         return
-    
+
     # ===== КАПТЧА =====
     if data.startswith('set_captcha_'):
         channel_id = int(data.replace('set_captcha_', ''))
@@ -2374,7 +2441,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         set_captcha_settings(channel_id, "Есть ли вам 18 лет?", ["Да", "Нет"])
         await edit_current("✅ ВКЛЮЧЕНО!", back_kb(uid))
         return
-    
+
     # ===== ПРИВАТНОСТЬ =====
     if data.startswith('set_privacy_'):
         channel_id = int(data.replace('set_privacy_', ''))
@@ -2384,7 +2451,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         status = "🔒 СКРЫТ" if new_val == 'private' else "🔓 ВИДЕН"
         await edit_current(f"✅ {status}!\n\n{'Канал скрыт из поиска.' if new_val == 'private' else 'Канал виден в поиске.'}", channel_settings_kb(uid, channel_id))
         return
-    
+
     # ===== ПОИСК КАНАЛОВ =====
     if data == 'search_channels':
         if not is_subscribed(uid) and uid != OWNER_ID:
@@ -2420,7 +2487,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['search_by_tg_id_wait'] = True
         await edit_current("🔍 ВВЕДИТЕ ID В ТГ:", back_kb(uid))
         return
-    
+
     # ===== ФИЛЬТР ПО КАТЕГОРИЯМ =====
     if data == 'filter_category':
         if not is_subscribed(uid) and uid != OWNER_ID:
@@ -2500,7 +2567,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         kb.append([InlineKeyboardButton("◀️ НАЗАД", callback_data='filter_category')])
         await edit_current(text, InlineKeyboardMarkup(kb))
         return
-    
+
     # ===== СОРТИРОВКА =====
     if data == 'sort_subscribers':
         if not is_subscribed(uid) and uid != OWNER_ID:
@@ -2566,7 +2633,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text += f"📺 {ch['channel_name']}\n   👤 {owner_name}\n   🆔 ТГ ID: {ch['channel_id']}\n   🔗 Ссылка: {channel_link}\n   👥 {ch['subscribers'] if ch['subscribers'] else 0}\n\n"
         await edit_current(text, back_kb(uid))
         return
-    
+
     # ===== ПОИСК ЛЮДЕЙ =====
     if data == 'search_users':
         if not is_subscribed(uid) and uid != OWNER_ID:
@@ -2575,7 +2642,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['search_users_wait'] = True
         await edit_current("🔍 ВВЕДИТЕ НИКНЕЙМ ИЛИ ID:", back_kb(uid))
         return
-    
+
     # ===== ЯЗЫК =====
     if data == 'language':
         await edit_current("🌍 ВЫБЕРИТЕ ЯЗЫК:", InlineKeyboardMarkup([[InlineKeyboardButton("🇷🇺 РУССКИЙ", callback_data='lang_ru')], [InlineKeyboardButton("🇬🇧 ENGLISH", callback_data='lang_en')], [InlineKeyboardButton("◀️ НАЗАД", callback_data='back')]]))
@@ -2589,7 +2656,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = f"🌟 ДОБРО ПОЖАЛОВАТЬ В {BOT_NAME}! 🌟\n\n{custom_desc}"
         await edit_current(text, main_kb(uid), custom_media)
         return
-    
+
     # ===== ПОДДЕРЖКА =====
     if data == 'support':
         if BOT_STOPPED:
@@ -2597,7 +2664,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await edit_current("💬 ПОДДЕРЖКА\n\n📌 @GanzalesSs920\n📌 @HellperBotNews", back_kb(uid))
         return
-    
+
     # ===== РАЗРАБОТЧИК =====
     if data == 'developer':
         if uid != OWNER_ID:
@@ -2606,7 +2673,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         blocked = get_blocked_users()
         await edit_current(f"⚙️ ПАНЕЛЬ РАЗРАБОТЧИКА\n\n👑 {get_user_nickname(uid) or uid}\n🔒 Заблокировано: {len(blocked)}\n📌 Версия: {BOT_VERSION}\n\n🔽 Действие:", dev_kb(uid))
         return
-    
+
     # ===== РАЗРАБОТЧИК: КОДЫ =====
     if data == 'dev_create_code':
         if uid != OWNER_ID:
@@ -2663,7 +2730,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         del_promo_code(code)
         await edit_current("✅ КОД УДАЛЕН!", dev_kb(uid))
         return
-    
+
     # ===== РАЗРАБОТЧИК: РАССЫЛКА =====
     if data == 'dev_broadcast':
         if uid != OWNER_ID:
@@ -2671,7 +2738,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await edit_current("📨 РАССЫЛКА\n\nОтправьте текст или медиа для рассылки.\n📌 Поддерживается:\n• Текст\n• Фото\n• Видео\n• GIF\n• Документ", back_kb(uid))
         context.user_data['broadcast_wait'] = True
         return
-    
+
     # ===== РАЗРАБОТЧИК: ТЕХОБСЛУЖИВАНИЕ =====
     if data == 'maintenance_on':
         if uid != OWNER_ID:
@@ -2686,7 +2753,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         BOT_STOPPED = False
         await edit_current("▶️ БОТ ОТКРЫТ!", dev_kb(uid))
         return
-    
+
     # ===== РАЗРАБОТЧИК: ПОДАРОК =====
     if data == 'dev_gift':
         if uid != OWNER_ID:
@@ -2694,7 +2761,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['gift_wait'] = True
         await edit_current("🎁 ВВЕДИТЕ ID ПОЛЬЗОВАТЕЛЯ ДЛЯ ПОДАРКА ПОДПИСКИ (30 дней):", back_kb(uid))
         return
-    
+
     # ===== РАЗРАБОТЧИК: ОТЧЁТ =====
     if data == 'dev_report':
         if uid != OWNER_ID:
@@ -2704,18 +2771,9 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         channels = get_all_channels()
         vp_posts = get_all_vp_posts_count()
         blocked = get_blocked_users()
-        await edit_current(
-            f"📊 ОТЧЁТ\n\n"
-            f"👥 Всего пользователей: {len(all_users)}\n"
-            f"👥 Активных: {len(sub_users)}\n"
-            f"📺 Каналов: {len(channels)}\n"
-            f"📢 Постов ВП: {vp_posts}\n"
-            f"🔒 Заблокировано: {len(blocked)}\n"
-            f"📌 Версия: {BOT_VERSION}",
-            dev_kb(uid)
-        )
+        await edit_current(f"📊 ОТЧЁТ\n\n👥 Всего пользователей: {len(all_users)}\n👥 Активных: {len(sub_users)}\n📺 Каналов: {len(channels)}\n📢 Постов ВП: {vp_posts}\n🔒 Заблокировано: {len(blocked)}\n📌 Версия: {BOT_VERSION}", dev_kb(uid))
         return
-    
+
     # ===== РАЗРАБОТЧИК: КАСТОМИЗАЦИЯ =====
     if data == 'dev_customize':
         if uid != OWNER_ID:
@@ -2753,7 +2811,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         set_setting("global_media", None)
         await edit_current("✅ ВСЁ СБРОШЕНО!", dev_kb(uid))
         return
-    
+
     # ===== РАЗРАБОТЧИК: ВСЕ ПОЛЬЗОВАТЕЛИ =====
     if data == 'dev_all_users':
         if uid != OWNER_ID:
@@ -2793,15 +2851,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             is_owner = "👑 ДА" if u['user_id'] == OWNER_ID else "❌ НЕТ"
             is_blocked = "🔒 ДА" if is_user_blocked(u['user_id']) else "❌ НЕТ"
             channels = get_user_channels(u['user_id'])
-            text += (
-                f"👤 {nickname}\n"
-                f"   🆔 ID: {u['user_id']}\n"
-                f"   👤 Username: @{u['username'] if u['username'] else 'Не указан'}\n"
-                f"   💳 Подписка: {sub_status}\n"
-                f"   👑 Владелец: {is_owner}\n"
-                f"   🔒 Заблокирован: {is_blocked}\n"
-                f"   📅 Дата регистрации: {u['created_at']}\n"
-            )
+            text += f"👤 {nickname}\n   🆔 ID: {u['user_id']}\n   👤 Username: @{u['username'] if u['username'] else 'Не указан'}\n   💳 Подписка: {sub_status}\n   👑 Владелец: {is_owner}\n   🔒 Заблокирован: {is_blocked}\n   📅 Дата регистрации: {u['created_at']}\n"
             if channels:
                 text += f"   📺 Каналов: {len(channels)}\n"
                 for ch in channels[:3]:
@@ -2820,7 +2870,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text += f"... и еще {len(all_users) - 30} пользователей"
         await edit_current(text, back_kb(uid, 'developer'))
         return
-    
+
     # ===== БЛОКИРОВКА/РАЗБЛОКИРОВКА =====
     if data.startswith('block_user_'):
         if uid != OWNER_ID:
@@ -2840,7 +2890,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         unblock_user(target_id)
         await edit_current(f"✅ ПОЛЬЗОВАТЕЛЬ {target_id} РАЗБЛОКИРОВАН!", dev_kb(uid))
         return
-    
+
     # ===== РАЗРАБОТЧИК: ТАЙМЕР ВП =====
     if data == 'dev_vp_timer':
         if uid != OWNER_ID:
@@ -2862,7 +2912,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['vp_timer_custom_wait'] = True
         await edit_current("⏰ ВВЕДИТЕ НОВОЕ ЗНАЧЕНИЕ ТАЙМЕРА В ЧАСАХ\n\nМожно ввести дробное число:\n• 0.5 = 30 минут\n• 0.8 = 48 минут\n• 1 = 1 час\n• 24 = 1 день\n\n📌 Пример: 0.5", back_kb(uid))
         return
-    
+
     # ===== РАЗРАБОТЧИК: ОЧИСТКА ВП =====
     if data == 'dev_clear_vp':
         if uid != OWNER_ID:
@@ -2876,7 +2926,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         clear_all_vp_posts()
         await edit_current("✅ ВСЕ ПОСТЫ ВП УДАЛЕНЫ!", dev_kb(uid))
         return
-    
+
     # ===== РАЗРАБОТЧИК: УДАЛЕНИЕ КАНАЛА =====
     if data.startswith('admin_del_channel_'):
         if uid != OWNER_ID:
@@ -2885,7 +2935,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         admin_delete_channel(channel_id)
         await edit_current("✅ КАНАЛ УДАЛЁН!", back_kb(uid))
         return
-    
+
     # ===== РАЗРАБОТЧИК: РЕДАКТОР РЕГИСТРАЦИИ =====
     if data == 'dev_edit_registration':
         if uid != OWNER_ID:
@@ -2921,7 +2971,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         set_setting("reg_media", None)
         await edit_current("✅ РЕГИСТРАЦИОННОЕ СООБЩЕНИЕ СБРОШЕНО!", registration_editor_kb())
         return
-    
+
     # ===== ВП =====
     if data == 'vp_menu':
         if not is_subscribed(uid) and uid != OWNER_ID:
@@ -3082,7 +3132,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['vp_wait_channel'] = False
         await edit_current("✅ СОЗДАНИЕ ПОСТА ОТМЕНЕНО!", vp_kb(uid))
         return
-    
+
     # ===== ЛИДЕРБОАРД =====
     if data.startswith('set_leaderboard_'):
         channel_id = int(data.replace('set_leaderboard_', ''))
@@ -3107,7 +3157,6 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 top = get_top_commenters(channel_id, period)
         else:
             top = get_top_commenters(channel_id, period)
-        
         text = f"📊 {names.get(period, '')}\n\n"
         if top:
             for i, (name, count) in enumerate(top[:20], 1):
@@ -3116,7 +3165,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text += "😕 Нет данных\n\nℹ️ Подключите группу к каналу для сбора статистики."
         await edit_current(text, back_kb(uid))
         return
-    
+
     # ===== СТАТИСТИКА =====
     if data.startswith('set_stats_'):
         channel_id = int(data.replace('set_stats_', ''))
@@ -3129,7 +3178,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         names = {'week': 'НЕДЕЛЯ', 'month': 'МЕСЯЦ', 'all': 'ВСЁ'}
         await edit_current(f"📊 {names.get(period, '')}\n\n👥 1,234\n👁 45,678\n📝 456", back_kb(uid))
         return
-    
+
     # ===== ПРОФИЛЬ КАНАЛА =====
     if data.startswith('channel_profile_'):
         channel_id = int(data.replace('channel_profile_', ''))
@@ -3172,18 +3221,52 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await edit_current("❌ КАНАЛ НЕ НАЙДЕН!", back_kb(uid))
         return
-    
-    # ===== КОД =====
-    if data == 'code_wait':
-        pass
-    
+
     await edit_current("🔄 В РАЗРАБОТКЕ...", back_kb(uid))
 
 # ============================================
-#  ЗАПУСК БОТА
+#  ФОНОВЫЙ ПОТОК ДЛЯ АВТОПОСТИНГА
 # ============================================
+def check_scheduled():
+    global application
+    while True:
+        try:
+            posts = get_due_scheduled_posts()
+            for p in posts:
+                try:
+                    if p['post_media']:
+                        try:
+                            application.bot.send_photo(chat_id=p['channel_id'], photo=p['post_media'], caption=p['post_text'] if p['post_text'] else None)
+                        except:
+                            try:
+                                application.bot.send_video(chat_id=p['channel_id'], video=p['post_media'], caption=p['post_text'] if p['post_text'] else None)
+                            except:
+                                try:
+                                    application.bot.send_animation(chat_id=p['channel_id'], animation=p['post_media'], caption=p['post_text'] if p['post_text'] else None)
+                                except:
+                                    try:
+                                        application.bot.send_document(chat_id=p['channel_id'], document=p['post_media'], caption=p['post_text'] if p['post_text'] else None)
+                                    except:
+                                        pass
+                    else:
+                        application.bot.send_message(chat_id=p['channel_id'], text=p['post_text'])
+                    conn = get_db()
+                    cursor = conn.cursor()
+                    cursor.execute('UPDATE scheduled_posts SET is_sent = 1 WHERE id = ?', (p['id'],))
+                    conn.commit()
+                    conn.close()
+                except Exception as e:
+                    log_error(f"Auto post error: {e}")
+            time.sleep(60)
+        except Exception as e:
+            log_error(f"Check error: {e}")
+            time.sleep(60)
 
+# ============================================
+#  ГЛАВНАЯ ФУНКЦИЯ
+# ============================================
 def main():
+    global application
     try:
         import requests
         resp = requests.get(f'https://api.telegram.org/bot{BOT_TOKEN}/deleteWebhook?drop_pending_updates=True')
@@ -3195,6 +3278,7 @@ def main():
     application = Application.builder().token(BOT_TOKEN).build()
     
     application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("joingroup", join_group_command))
     application.add_handler(CallbackQueryHandler(callback))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_msg))
     application.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.ANIMATION | filters.Document.ALL, handle_msg))
@@ -3207,42 +3291,6 @@ def main():
     application.add_handler(PreCheckoutQueryHandler(pre_checkout))
     application.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment))
     
-    def check_scheduled():
-        while True:
-            try:
-                posts = get_all_scheduled_posts()
-                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                for p in posts:
-                    if p['scheduled_time'] <= now:
-                        try:
-                            if p['post_media']:
-                                try:
-                                    application.bot.send_photo(chat_id=p['channel_id'], photo=p['post_media'], caption=p['post_text'] if p['post_text'] else None)
-                                except:
-                                    try:
-                                        application.bot.send_video(chat_id=p['channel_id'], video=p['post_media'], caption=p['post_text'] if p['post_text'] else None)
-                                    except:
-                                        try:
-                                            application.bot.send_animation(chat_id=p['channel_id'], animation=p['post_media'], caption=p['post_text'] if p['post_text'] else None)
-                                        except:
-                                            try:
-                                                application.bot.send_document(chat_id=p['channel_id'], document=p['post_media'], caption=p['post_text'] if p['post_text'] else None)
-                                            except:
-                                                pass
-                            else:
-                                application.bot.send_message(chat_id=p['channel_id'], text=p['post_text'])
-                            conn = get_db()
-                            cursor = conn.cursor()
-                            cursor.execute('UPDATE scheduled_posts SET is_sent = 1 WHERE id = ?', (p['id'],))
-                            conn.commit()
-                            conn.close()
-                        except Exception as e:
-                            log_error(f"Auto post error: {e}")
-                time.sleep(60)
-            except Exception as e:
-                log_error(f"Check error: {e}")
-                time.sleep(60)
-    
     thread = threading.Thread(target=check_scheduled, daemon=True)
     thread.start()
     
@@ -3250,7 +3298,7 @@ def main():
     print(f"🔥 БОТ {BOT_NAME} ЗАПУЩЕН!")
     print("=" * 60)
     print(f"👑 Владелец: {OWNER_ID}")
-    print(f"💰 Цены: {PRICES['month']}/{PRICES['6month']}/{PRICES['year']} руб")
+    print(f"💰 Цены (⭐): {PRICE_MONTH}/{PRICE_6MONTH}/{PRICE_YEAR}")
     print(f"📌 Версия: {BOT_VERSION}")
     print(f"🔒 Заблокировано: {len(get_blocked_users())}")
     print(f"⏰ Таймер ВП: {get_vp_timer()} часов")

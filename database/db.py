@@ -22,7 +22,7 @@ def init_db():
     conn = get_db()
     cursor = conn.cursor()
     
-    # ===== ПОЛЬЗОВАТЕЛИ =====
+    # Все таблицы (как в оригинале)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             user_id INTEGER PRIMARY KEY,
@@ -38,7 +38,6 @@ def init_db():
     add_column_if_not_exists(cursor, 'users', 'adult_verified', 'INTEGER DEFAULT 0')
     add_column_if_not_exists(cursor, 'users', 'name_changes', 'INTEGER DEFAULT 0')
     
-    # ===== НИКНЕЙМЫ =====
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS nicknames (
             user_id INTEGER PRIMARY KEY,
@@ -47,7 +46,6 @@ def init_db():
         )
     ''')
     
-    # ===== ПОДПИСКИ (с автопродлением) =====
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS subscriptions (
             user_id INTEGER PRIMARY KEY,
@@ -57,24 +55,12 @@ def init_db():
         )
     ''')
     
-    # ===== ПЛАТЁЖНЫЕ МЕТОДЫ (карты) =====
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS payment_methods (
-            user_id INTEGER PRIMARY KEY,
-            payment_method_id TEXT,
-            last4 TEXT,
-            card_type TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # ===== ИСТОРИЯ ПЛАТЕЖЕЙ =====
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS payments_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
             amount INTEGER,
-            currency TEXT DEFAULT 'RUB',
+            currency TEXT DEFAULT 'XTR',
             status TEXT,
             payment_id TEXT,
             plan_type TEXT,
@@ -82,7 +68,6 @@ def init_db():
         )
     ''')
     
-    # ===== КАНАЛЫ =====
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS channels (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -96,7 +81,6 @@ def init_db():
         )
     ''')
     
-    # ===== ЧЁРНЫЙ СПИСОК СЛОВ =====
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS blacklist_words (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -105,7 +89,6 @@ def init_db():
         )
     ''')
     
-    # ===== ЗАПЛАНИРОВАННЫЕ ПОСТЫ =====
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS scheduled_posts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -118,7 +101,6 @@ def init_db():
         )
     ''')
     
-    # ===== ПРОМОКОДЫ =====
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS promo_codes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -132,7 +114,6 @@ def init_db():
         )
     ''')
     
-    # ===== НАСТРОЙКИ =====
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
@@ -140,7 +121,6 @@ def init_db():
         )
     ''')
     
-    # ===== ВП ПОСТЫ =====
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS vp_posts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -154,7 +134,6 @@ def init_db():
         )
     ''')
     
-    # ===== УВЕДОМЛЕНИЯ =====
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS notifications (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -167,17 +146,10 @@ def init_db():
         )
     ''')
     
-    # ===== ДОБАВЛЯЕМ ВЛАДЕЛЬЦА =====
-    cursor.execute('''
-        INSERT OR IGNORE INTO users (user_id, registered, adult_verified) 
-        VALUES (?, 1, 1)
-    ''', (OWNER_ID,))
-    
+    # Добавляем владельца
+    cursor.execute('INSERT OR IGNORE INTO users (user_id, registered, adult_verified) VALUES (?, 1, 1)', (OWNER_ID,))
     end_date = (datetime.now() + timedelta(days=3650)).strftime('%Y-%m-%d')
-    cursor.execute('''
-        INSERT OR REPLACE INTO subscriptions (user_id, end_date, auto_renew) 
-        VALUES (?, ?, 1)
-    ''', (OWNER_ID, end_date))
+    cursor.execute('INSERT OR REPLACE INTO subscriptions (user_id, end_date, auto_renew) VALUES (?, ?, 1)', (OWNER_ID, end_date))
     
     conn.commit()
     conn.close()
@@ -185,7 +157,6 @@ def init_db():
 # ============================================
 #  ПОЛЬЗОВАТЕЛИ
 # ============================================
-
 def create_user(user_id, username):
     conn = get_db()
     cursor = conn.cursor()
@@ -265,7 +236,6 @@ def increment_name_changes(user_id):
 # ============================================
 #  НИКНЕЙМЫ
 # ============================================
-
 def get_user_nickname(user_id):
     conn = get_db()
     cursor = conn.cursor()
@@ -290,7 +260,6 @@ def is_nickname_taken(nickname):
 # ============================================
 #  ПОДПИСКИ
 # ============================================
-
 def get_subscription_end(user_id):
     conn = get_db()
     cursor = conn.cursor()
@@ -331,43 +300,14 @@ def get_auto_renew(user_id):
     return result['auto_renew'] == 1 if result else 0
 
 # ============================================
-#  ПЛАТЁЖНЫЕ МЕТОДЫ
+#  ИСТОРИЯ ПЛАТЕЖЕЙ (для звёзд)
 # ============================================
-
-def save_payment_method(user_id, payment_method_id, last4, card_type):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT OR REPLACE INTO payment_methods (user_id, payment_method_id, last4, card_type)
-        VALUES (?, ?, ?, ?)
-    ''', (user_id, payment_method_id, last4, card_type))
-    conn.commit()
-    conn.close()
-
-def get_payment_method(user_id):
-    conn = get_db()
-    cursor = conn.cursor()
-    result = cursor.execute('SELECT * FROM payment_methods WHERE user_id = ?', (user_id,)).fetchone()
-    conn.close()
-    return result
-
-def delete_payment_method(user_id):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('DELETE FROM payment_methods WHERE user_id = ?', (user_id,))
-    conn.commit()
-    conn.close()
-
-# ============================================
-#  ИСТОРИЯ ПЛАТЕЖЕЙ
-# ============================================
-
 def add_payment_history(user_id, amount, status, payment_id, plan_type):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO payments_history (user_id, amount, status, payment_id, plan_type)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO payments_history (user_id, amount, currency, status, payment_id, plan_type)
+        VALUES (?, ?, 'XTR', ?, ?, ?)
     ''', (user_id, amount, status, payment_id, plan_type))
     conn.commit()
     conn.close()
@@ -384,14 +324,10 @@ def get_payment_history(user_id, limit=10):
 # ============================================
 #  КАНАЛЫ
 # ============================================
-
 def add_channel_db(channel_id, channel_name, owner_id, category, privacy='public', subscribers=0):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('''
-        INSERT OR REPLACE INTO channels (channel_id, channel_name, owner_id, category, privacy, subscribers) 
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (channel_id, channel_name, owner_id, category, privacy, subscribers))
+    cursor.execute('''INSERT OR REPLACE INTO channels (channel_id, channel_name, owner_id, category, privacy, subscribers) VALUES (?, ?, ?, ?, ?, ?)''', (channel_id, channel_name, owner_id, category, privacy, subscribers))
     conn.commit()
     conn.close()
     return True
@@ -457,10 +393,70 @@ def admin_delete_channel(channel_id):
     conn.commit()
     conn.close()
 
-# ============================================
-#  БЛЭКЛИСТ
-# ============================================
+# ===== СВЯЗАННАЯ ГРУППА =====
+def get_channel_linked_group(channel_id):
+    return get_setting(f"linked_group_{channel_id}")
 
+def set_channel_linked_group(channel_id, group_id):
+    set_setting(f"linked_group_{channel_id}", str(group_id))
+
+# ============================================
+#  АВТОПРИЁМ
+# ============================================
+def get_auto_approve(channel_id):
+    return get_setting(f"auto_approve_{channel_id}") == '1'
+
+def set_auto_approve(channel_id, enabled):
+    set_setting(f"auto_approve_{channel_id}", '1' if enabled else '0')
+
+# ============================================
+#  ПРИВЕТСТВИЕ (ДОБАВЛЕНО)
+# ============================================
+def set_welcome_text(channel_id, text):
+    set_setting(f"welcome_text_{channel_id}", text)
+
+def get_welcome_text(channel_id):
+    return get_setting(f"welcome_text_{channel_id}")
+
+# ============================================
+#  ПРОЩАНИЕ (ДОБАВЛЕНО)
+# ============================================
+def set_farewell_text(channel_id, text):
+    set_setting(f"farewell_text_{channel_id}", text)
+
+def get_farewell_text(channel_id):
+    return get_setting(f"farewell_text_{channel_id}")
+
+# ============================================
+#  КАПТЧА (ДОБАВЛЕНО)
+# ============================================
+def set_captcha_settings(channel_id, question, answers):
+    data = json.dumps({"question": question, "answers": answers})
+    set_setting(f"captcha_{channel_id}", data)
+
+def get_captcha_settings(channel_id):
+    data = get_setting(f"captcha_{channel_id}")
+    if data:
+        try:
+            return json.loads(data)
+        except:
+            return None
+    return None
+
+def del_captcha_settings(channel_id):
+    set_setting(f"captcha_{channel_id}", None)
+
+# ============================================
+#  ЛИДЕРБОАРД (ЗАГЛУШКА)
+# ============================================
+def get_top_commenters(channel_id, period):
+    # В реальном проекте здесь должен быть запрос к БД со статистикой
+    # Пока возвращаем пустой список, чтобы не падать
+    return []
+
+# ============================================
+#  ЧЁРНЫЙ СПИСОК
+# ============================================
 def add_blacklist_word(channel_id, word):
     conn = get_db()
     cursor = conn.cursor()
@@ -485,7 +481,6 @@ def del_blacklist_word(channel_id, word):
 # ============================================
 #  ЗАПЛАНИРОВАННЫЕ ПОСТЫ
 # ============================================
-
 def add_scheduled_post(channel_id, text, media, scheduled_time):
     conn = get_db()
     cursor = conn.cursor()
@@ -496,14 +491,21 @@ def add_scheduled_post(channel_id, text, media, scheduled_time):
 def get_scheduled_posts(channel_id):
     conn = get_db()
     cursor = conn.cursor()
-    posts = cursor.execute('SELECT * FROM scheduled_posts WHERE channel_id = ? AND is_sent = 0 AND scheduled_time > datetime("now") ORDER BY scheduled_time ASC', (channel_id,)).fetchall()
+    posts = cursor.execute('SELECT * FROM scheduled_posts WHERE channel_id = ? AND is_sent = 0 ORDER BY scheduled_time ASC', (channel_id,)).fetchall()
     conn.close()
     return posts
 
 def get_all_scheduled_posts():
     conn = get_db()
     cursor = conn.cursor()
-    posts = cursor.execute('SELECT * FROM scheduled_posts WHERE is_sent = 0 AND scheduled_time > datetime("now") ORDER BY scheduled_time ASC').fetchall()
+    posts = cursor.execute('SELECT * FROM scheduled_posts WHERE is_sent = 0 ORDER BY scheduled_time ASC').fetchall()
+    conn.close()
+    return posts
+
+def get_due_scheduled_posts():
+    conn = get_db()
+    cursor = conn.cursor()
+    posts = cursor.execute('SELECT * FROM scheduled_posts WHERE is_sent = 0 AND scheduled_time <= datetime("now") ORDER BY scheduled_time ASC').fetchall()
     conn.close()
     return posts
 
@@ -517,7 +519,6 @@ def del_scheduled_post(post_id):
 # ============================================
 #  ПРОМОКОДЫ
 # ============================================
-
 def create_promo_code(code, name, max_uses, days):
     conn = get_db()
     cursor = conn.cursor()
@@ -556,7 +557,6 @@ def del_promo_code(code):
 # ============================================
 #  НАСТРОЙКИ
 # ============================================
-
 def get_setting(key):
     conn = get_db()
     cursor = conn.cursor()
@@ -574,7 +574,6 @@ def set_setting(key, value):
 # ============================================
 #  ВП (ВЗАИМОПОСТ)
 # ============================================
-
 def get_vp_timer():
     timer = get_setting("vp_timer")
     if timer:
@@ -663,7 +662,6 @@ def can_user_post_vp(user_id):
 # ============================================
 #  УВЕДОМЛЕНИЯ
 # ============================================
-
 def mark_all_notifications_read(user_id):
     conn = get_db()
     cursor = conn.cursor()
@@ -674,17 +672,6 @@ def mark_all_notifications_read(user_id):
 def add_notification(user_id, notif_type, content, link_data=None):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS notifications (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            type TEXT,
-            content TEXT,
-            link_data TEXT,
-            read INTEGER DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
     cursor.execute('INSERT INTO notifications (user_id, type, content, link_data) VALUES (?, ?, ?, ?)', (user_id, notif_type, content, link_data))
     conn.commit()
     conn.close()
@@ -717,14 +704,12 @@ def delete_notification(notif_id):
 # ============================================
 #  УДАЛЕНИЕ ПРОФИЛЯ
 # ============================================
-
 def delete_user_profile(user_id):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute('DELETE FROM users WHERE user_id = ?', (user_id,))
     cursor.execute('DELETE FROM nicknames WHERE user_id = ?', (user_id,))
     cursor.execute('DELETE FROM subscriptions WHERE user_id = ?', (user_id,))
-    cursor.execute('DELETE FROM payment_methods WHERE user_id = ?', (user_id,))
     cursor.execute('DELETE FROM channels WHERE owner_id = ?', (user_id,))
     cursor.execute('DELETE FROM settings WHERE key LIKE ?', (f"blocked_{user_id}",))
     cursor.execute('DELETE FROM vp_posts WHERE user_id = ?', (user_id,))
