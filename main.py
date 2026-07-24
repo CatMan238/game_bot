@@ -3308,11 +3308,11 @@ def main():
     except Exception as e:
         print("⚠️ Ошибка сброса webhook:", e)
     
-        if not os.path.exists(DATABASE_PATH):
+    if not os.path.exists(DATABASE_PATH):
         init_db()
     else:
-        # БД уже существует, просто подключаемся
         pass
+    
     application = Application.builder().token(BOT_TOKEN).build()
     
     application.add_handler(CommandHandler("start", start))
