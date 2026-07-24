@@ -21,8 +21,6 @@ def add_column_if_not_exists(cursor, table, column, column_type):
 def init_db():
     conn = get_db()
     cursor = conn.cursor()
-    
-    # Все таблицы (как в оригинале)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             user_id INTEGER PRIMARY KEY,
@@ -146,7 +144,17 @@ def init_db():
         )
     ''')
     
-    # Добавляем владельца
+    # Таблица для сбора статистики комментаторов (лидерборд)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS channel_posts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            channel_id INTEGER,
+            user_id INTEGER,
+            message_id INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
     cursor.execute('INSERT OR IGNORE INTO users (user_id, registered, adult_verified) VALUES (?, 1, 1)', (OWNER_ID,))
     end_date = (datetime.now() + timedelta(days=3650)).strftime('%Y-%m-%d')
     cursor.execute('INSERT OR REPLACE INTO subscriptions (user_id, end_date, auto_renew) VALUES (?, ?, 1)', (OWNER_ID, end_date))
@@ -300,7 +308,7 @@ def get_auto_renew(user_id):
     return result['auto_renew'] == 1 if result else 0
 
 # ============================================
-#  ИСТОРИЯ ПЛАТЕЖЕЙ (для звёзд)
+#  ИСТОРИЯ ПЛАТЕЖЕЙ
 # ============================================
 def add_payment_history(user_id, amount, status, payment_id, plan_type):
     conn = get_db()
@@ -393,7 +401,9 @@ def admin_delete_channel(channel_id):
     conn.commit()
     conn.close()
 
-# ===== СВЯЗАННАЯ ГРУППА =====
+# ============================================
+#  СВЯЗАННАЯ ГРУППА
+# ============================================
 def get_channel_linked_group(channel_id):
     return get_setting(f"linked_group_{channel_id}")
 
@@ -410,7 +420,7 @@ def set_auto_approve(channel_id, enabled):
     set_setting(f"auto_approve_{channel_id}", '1' if enabled else '0')
 
 # ============================================
-#  ПРИВЕТСТВИЕ (ДОБАВЛЕНО)
+#  ПРИВЕТСТВИЕ
 # ============================================
 def set_welcome_text(channel_id, text):
     set_setting(f"welcome_text_{channel_id}", text)
@@ -419,7 +429,7 @@ def get_welcome_text(channel_id):
     return get_setting(f"welcome_text_{channel_id}")
 
 # ============================================
-#  ПРОЩАНИЕ (ДОБАВЛЕНО)
+#  ПРОЩАНИЕ
 # ============================================
 def set_farewell_text(channel_id, text):
     set_setting(f"farewell_text_{channel_id}", text)
@@ -428,7 +438,7 @@ def get_farewell_text(channel_id):
     return get_setting(f"farewell_text_{channel_id}")
 
 # ============================================
-#  КАПТЧА (ДОБАВЛЕНО)
+#  КАПТЧА
 # ============================================
 def set_captcha_settings(channel_id, question, answers):
     data = json.dumps({"question": question, "answers": answers})
@@ -447,11 +457,10 @@ def del_captcha_settings(channel_id):
     set_setting(f"captcha_{channel_id}", None)
 
 # ============================================
-#  ЛИДЕРБОАРД (ЗАГЛУШКА)
+#  ЛИДЕРБОАРД
 # ============================================
 def get_top_commenters(channel_id, period):
-    # В реальном проекте здесь должен быть запрос к БД со статистикой
-    # Пока возвращаем пустой список, чтобы не падать
+    # Пока заглушка, можно реализовать сбор из channel_posts
     return []
 
 # ============================================
@@ -572,7 +581,7 @@ def set_setting(key, value):
     conn.close()
 
 # ============================================
-#  ВП (ВЗАИМОПОСТ)
+#  ВП
 # ============================================
 def get_vp_timer():
     timer = get_setting("vp_timer")

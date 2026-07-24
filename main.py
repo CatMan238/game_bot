@@ -707,7 +707,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     add_user_message(uid, msg)
 
 # ============================================
-#  ОБРАБОТЧИК СООБЩЕНИЙ (handle_msg) – ЧАСТЬ 2
+#  ОБРАБОТЧИК СООБЩЕНИЙ
 # ============================================
 async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global BOT_STOPPED
@@ -1211,8 +1211,6 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data['connect_channel_name'] = chat.title
             context.user_data['connect_wait'] = False
             context.user_data['selected_categories'] = []
-            # Перенаправляем в меню выбора категорий (через edit_current вызовем позже)
-            # Здесь не можем вызвать edit_current, поэтому отправляем новое сообщение с клавиатурой
             reply = await msg.reply_text("📂 ВЫБЕРИТЕ ДО 2 КАТЕГОРИЙ:", reply_markup=categories_kb(uid, []))
             add_user_message(uid, reply)
             await delete_user_messages(context.bot, uid, keep_last=1)
@@ -1590,10 +1588,7 @@ async def successful_payment(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await context.bot.send_message(chat_id=OWNER_ID, text=f"💰 НОВАЯ ОПЛАТА ЗВЁЗДАМИ!\n\n👤 Пользователь: {get_user_nickname(user_id) or user_id}\n📅 План: {plan_type}\n⭐ {stars} звёзд\n📅 Подписка до {end_date}")
 
 # ============================================
-#  CALLBACK (часть будет в следующем блоке)
-# ============================================
-# ============================================
-#  ОБРАБОТЧИК КНОПОК (CALLBACK)
+#  CALLBACK (полный)
 # ============================================
 async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global BOT_STOPPED, BOT_VERSION
@@ -1652,7 +1647,12 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 channel = ch
                 break
         channel_name = channel['channel_name'] if channel else "Канал удален"
-        caption = f"📢 ВП (ВЗАИМОПОСТ)\n\n📺 Канал: {channel_name}\n👤 Владелец: {owner_name}\n📂 Категория: {category if category else 'Без категории'}\n"
+        caption = (
+            f"📢 ВП (ВЗАИМОПОСТ)\n\n"
+            f"📺 Канал: {channel_name}\n"
+            f"👤 Владелец: {owner_name}\n"
+            f"📂 Категория: {category if category else 'Без категории'}\n"
+        )
         if is_adult:
             caption += f"🔞 18+\n"
         caption += f"🕐 {created_at}\n\n📝 {text}\n\n"
@@ -1739,7 +1739,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 title=f"Подписка {PLAN_NAMES[plan_type]}",
                 description=f"Доступ к боту на {days} дней",
                 payload=f"stars_{plan_type}_{uid}_{int(time.time())}",
-                provider_token="",
+                provider_token="",  # обязательно для звёзд
                 currency="XTR",
                 prices=[{"label": PLAN_NAMES[plan_type], "amount": stars}],
                 start_parameter="subscription",
@@ -1794,7 +1794,18 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             notifs = get_user_notifications(uid, unread_only=True)
             notif_count = len(notifs)
             notif_text = f"📬 {notif_count} новых" if notif_count > 0 else "📭 Пусто"
-            text = f"👤 ПРОФИЛЬ\n\n👤 Никнейм: {nickname}\n🆔 ID в боте: {uid}\n🆔 ID в Telegram: {uid}\n📝 Смена имени: {name_changes_text}\n🔞 Возраст: {adult_status}\n🔒 Заблокирован: {is_blocked_user}\n💰 ПОДПИСКА: {sub_status}\n{notif_text}\n📺 КАНАЛЫ:{channels_text}"
+            text = (
+                f"👤 ПРОФИЛЬ\n\n"
+                f"👤 Никнейм: {nickname}\n"
+                f"🆔 ID в боте: {uid}\n"
+                f"🆔 ID в Telegram: {uid}\n"
+                f"📝 Смена имени: {name_changes_text}\n"
+                f"🔞 Возраст: {adult_status}\n"
+                f"🔒 Заблокирован: {is_blocked_user}\n"
+                f"💰 ПОДПИСКА: {sub_status}\n"
+                f"{notif_text}\n"
+                f"📺 КАНАЛЫ:{channels_text}"
+            )
             await edit_current(text, profile_kb(uid))
         except Exception as e:
             import traceback
@@ -2057,23 +2068,28 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 privacy = 'private'
             categories_str = ', '.join(selected)
             add_channel_db(channel_id, chat_name, uid, categories_str, privacy, subscribers)
+            
+            # Проверяем и пытаемся вступить в группу обсуждений
             linked_group_id = None
             try:
                 chat_info = context.bot.get_chat(channel_id)
                 if hasattr(chat_info, 'linked_chat_id') and chat_info.linked_chat_id:
                     linked_group_id = chat_info.linked_chat_id
                     set_channel_linked_group(channel_id, linked_group_id)
-                    # Пытаемся автоматически вступить в группу
+                    # Пытаемся вступить в группу
                     try:
                         await context.bot.join_chat(linked_group_id)
+                        group_text = f"\n💬 Группа: ✅ Бот вступил в группу!"
                     except Exception as e:
-                        log_error(f"Auto join group error: {e}")
-            except:
-                pass
+                        group_text = f"\n💬 Группа: ✅ Найдена, но бот не смог вступить (нужно добавить вручную).\nОшибка: {str(e)[:100]}"
+                else:
+                    group_text = "\n💬 Группа: ❌ Не найдена (нет обсуждений)"
+            except Exception as e:
+                group_text = f"\n💬 Группа: ❌ Ошибка получения информации: {str(e)[:100]}"
+            
             context.user_data['selected_categories'] = []
             context.user_data['connect_channel_id'] = None
             context.user_data['connect_channel_name'] = None
-            group_text = f"\n💬 Группа: {'✅ Найдена и бот вступил' if linked_group_id else '❌ Не найдена'}"
             await edit_current(f"✅ КАНАЛ ПРИВЯЗАН!\n\n📺 {chat_name}\n📂 Категории: {categories_str}\n🔒 {privacy}\n👥 {subscribers}{group_text}\n\n🔽 Что дальше?", InlineKeyboardMarkup([[InlineKeyboardButton("🔗 ПРИВЯЗАТЬ ЕЩЁ", callback_data='connect_channel')], [InlineKeyboardButton("⚙️ НАСТРОЙКИ", callback_data=f"set_ch_{channel_id}")], [InlineKeyboardButton("◀️ В ГЛАВНОЕ МЕНЮ", callback_data='back')]]))
         else:
             await edit_current("❌ ОШИБКА! Канал не найден.", back_kb(uid))
@@ -2143,7 +2159,19 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 admins_text += f"   ... и еще {len(info['admins']) - 5}"
         else:
             admins_text = "   ❌ Нет данных"
-        text = f"ℹ️ ИНФОРМАЦИЯ О КАНАЛЕ\n\n📺 Название: {info['title']}\n🆔 ТГ ID: {info['id']}\n🔗 Username: @{info['username'] if info['username'] else 'Нет'}\n📝 Описание: {info['description'] if info['description'] else 'Не указано'}\n👥 Подписчиков: {info['member_count']}\n🔒 Видимость: {privacy_text}\n💬 Группа: {group_text}\n📂 Категория: {ch['category'] if ch['category'] else 'Не указана'}\n👑 Владелец: {get_user_nickname(ch['owner_id']) or ch['owner_id']}\n👥 Администраторы:\n{admins_text}\n"
+        text = (
+            f"ℹ️ ИНФОРМАЦИЯ О КАНАЛЕ\n\n"
+            f"📺 Название: {info['title']}\n"
+            f"🆔 ТГ ID: {info['id']}\n"
+            f"🔗 Username: @{info['username'] if info['username'] else 'Нет'}\n"
+            f"📝 Описание: {info['description'] if info['description'] else 'Не указано'}\n"
+            f"👥 Подписчиков: {info['member_count']}\n"
+            f"🔒 Видимость: {privacy_text}\n"
+            f"💬 Группа: {group_text}\n"
+            f"📂 Категория: {ch['category'] if ch['category'] else 'Не указана'}\n"
+            f"👑 Владелец: {get_user_nickname(ch['owner_id']) or ch['owner_id']}\n"
+            f"👥 Администраторы:\n{admins_text}\n"
+        )
         kb = [[InlineKeyboardButton("🔄 ОБНОВИТЬ", callback_data=f"channel_info_{channel_id}")], [InlineKeyboardButton("◀️ НАЗАД", callback_data=f"set_ch_{channel_id}")]]
         if info['photo']:
             try:
@@ -2772,7 +2800,16 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         channels = get_all_channels()
         vp_posts = get_all_vp_posts_count()
         blocked = get_blocked_users()
-        await edit_current(f"📊 ОТЧЁТ\n\n👥 Всего пользователей: {len(all_users)}\n👥 Активных: {len(sub_users)}\n📺 Каналов: {len(channels)}\n📢 Постов ВП: {vp_posts}\n🔒 Заблокировано: {len(blocked)}\n📌 Версия: {BOT_VERSION}", dev_kb(uid))
+        await edit_current(
+            f"📊 ОТЧЁТ\n\n"
+            f"👥 Всего пользователей: {len(all_users)}\n"
+            f"👥 Активных: {len(sub_users)}\n"
+            f"📺 Каналов: {len(channels)}\n"
+            f"📢 Постов ВП: {vp_posts}\n"
+            f"🔒 Заблокировано: {len(blocked)}\n"
+            f"📌 Версия: {BOT_VERSION}",
+            dev_kb(uid)
+        )
         return
 
     # ===== РАЗРАБОТЧИК: КАСТОМИЗАЦИЯ =====
@@ -2852,7 +2889,15 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             is_owner = "👑 ДА" if u['user_id'] == OWNER_ID else "❌ НЕТ"
             is_blocked = "🔒 ДА" if is_user_blocked(u['user_id']) else "❌ НЕТ"
             channels = get_user_channels(u['user_id'])
-            text += f"👤 {nickname}\n   🆔 ID: {u['user_id']}\n   👤 Username: @{u['username'] if u['username'] else 'Не указан'}\n   💳 Подписка: {sub_status}\n   👑 Владелец: {is_owner}\n   🔒 Заблокирован: {is_blocked}\n   📅 Дата регистрации: {u['created_at']}\n"
+            text += (
+                f"👤 {nickname}\n"
+                f"   🆔 ID: {u['user_id']}\n"
+                f"   👤 Username: @{u['username'] if u['username'] else 'Не указан'}\n"
+                f"   💳 Подписка: {sub_status}\n"
+                f"   👑 Владелец: {is_owner}\n"
+                f"   🔒 Заблокирован: {is_blocked}\n"
+                f"   📅 Дата регистрации: {u['created_at']}\n"
+            )
             if channels:
                 text += f"   📺 Каналов: {len(channels)}\n"
                 for ch in channels[:3]:
@@ -3145,19 +3190,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         period = parts[1] if len(parts) > 1 else 'day'
         channel_id = int(parts[2]) if len(parts) > 2 else 0
         names = {'day': 'ДЕНЬ', 'month': 'МЕСЯЦ', 'all': 'ВСЁ'}
-        linked_group = get_channel_linked_group(channel_id)
-        if linked_group:
-            top = []
-            try:
-                members = context.bot.get_chat_administrators(linked_group)
-                for admin in members[:20]:
-                    if not admin.user.is_bot:
-                        name = admin.user.first_name or admin.user.username or str(admin.user.id)
-                        top.append((name, random.randint(1, 100)))
-            except:
-                top = get_top_commenters(channel_id, period)
-        else:
-            top = get_top_commenters(channel_id, period)
+        top = get_top_commenters(channel_id, period)
         text = f"📊 {names.get(period, '')}\n\n"
         if top:
             for i, (name, count) in enumerate(top[:20], 1):
@@ -3222,7 +3255,7 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await edit_current("❌ КАНАЛ НЕ НАЙДЕН!", back_kb(uid))
         return
-
+    
     await edit_current("🔄 В РАЗРАБОТКЕ...", back_kb(uid))
 
 # ============================================
